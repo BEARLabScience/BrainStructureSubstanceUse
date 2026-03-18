@@ -92,7 +92,7 @@ max_count <- max(c(tobacco_counts$n, illicits_counts$n, marijuana_counts$n, audi
 
 p8 <- ggplot(tobacco_counts, aes(x = Tobacco_use, y = n, fill = Tobacco_use)) +
   geom_col() +
-  scale_fill_manual(values = c("#bdd7e7","#2171b5","#08519c","#08306b")) +
+  scale_fill_manual(values = colorRampPalette(c("#bdd7e7","#08306b"))(nrow(tobacco_counts))) +
   labs(title = "Times Used Tobacco", x = NULL, y = NULL) +
   coord_cartesian(ylim = c(0, max_count)) +
   theme_classic() +
@@ -115,7 +115,7 @@ p9
 
 p10 <- ggplot(marijuana_counts, aes(x = Marijuana_use, y = n, fill = Marijuana_use)) +
   geom_col() +
-  scale_fill_manual(values = colorRampPalette(c("#fee6ce","#e6550d"))(nrow(marijuana_counts))) +
+  scale_fill_manual(values = colorRampPalette(c("#A3D492","#3f5938"))(nrow(marijuana_counts)))+
   labs(title = "Times Used Marijuana", x = NULL, y = NULL) +
   coord_cartesian(ylim = c(0, max_count)) +
   theme_classic() +
@@ -126,11 +126,11 @@ p10 <- ggplot(marijuana_counts, aes(x = Marijuana_use, y = n, fill = Marijuana_u
 
 p10
 
+## note: p11 is created here but used in the "upset plots- poly use & heavy use" portion 
 p11 <- ggplot(auditc_counts, aes(x = audit_c, y = n, fill = sev)) +
-  labs(title = "mAUDIT-C (Hazardous Alcohol Use) Scores", x = NULL, y = NULL) +
-  geom_col(alpha = 0.85) +
-  scale_fill_manual(values = c("Low" = "#8BAC54FF", "Moderate" = "#F67E4B", "High" = "#2171b5", "Severe" = "#c51b8a"))+
-  geom_col(alpha = 0.85) +
+  labs(x = "mAUDIT-C: Hazardous Alcohol Use", x = NULL, y = NULL) +
+  geom_col(alpha = 0.85, width = 0.9) +
+  scale_fill_manual(values = c("Low" = "#33A65CFF", "Moderate" = "#F8B620FF", "High" = "#1BA3C6FF", "Severe" = "violetred3"))+
   scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12))+
   facet_grid(. ~ sev, space = "free", scales = "free_x", switch = "x") +
   theme_classic() +
@@ -138,12 +138,14 @@ p11 <- ggplot(auditc_counts, aes(x = audit_c, y = n, fill = sev)) +
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         text = element_text(family = "Arial"),
-        axis.text = element_text(color = "black", size = 18),
+        axis.title.x= element_text(size = 12, family = "Arial"),
+        axis.text.x = element_text(size = 12, family = "Arial"),
         plot.title = element_text(size = 17),
         strip.placement = "inside",
-        strip.text = element_text(family = "Arial", color = "black", size = 9, hjust = 0.5),
-        panel.spacing =  unit(-0.1, "lines"))+
-  geom_text(aes(label = n, y = n + 3, family = "Arial"), size = 3.5,
+        strip.text = element_text(family = "Arial", color = "black", size = 11, hjust = 0.5),
+        panel.spacing =  unit(-0.1, "lines"),
+        plot.tag = element_text(size = 30, family = "Arial", face = "bold", hjust = -1, vjust = 1.5))+
+  geom_text(aes(label = n, y = n + 3, family = "Arial"), size = 4,
             position = position_dodge(0.5), vjust = 0)+
   scale_y_continuous(expand = expansion(mult = 0, add = 1))+
   expand_limits(y = c(0, 155))
@@ -153,105 +155,269 @@ p11
 p8 <- p8 + ggtitle("Times Used Tobacco") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
 p9 <- p9 + ggtitle("Times Used Illicit Drugs") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
 p10 <- p10 + ggtitle("Times Used Marijuana") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
-p11 <- p11 + ggtitle("mAUDIT-C Risk") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
+p11 <- p11 + labs (tag = "A") + theme(plot.tag = element_text(size = 20))
 
-pb <- (free(p10) + free(p8) + free(p9) + free(p11) +
-         plot_layout(ncol = 2, axes = "keep") +
+p11
+
+pb <- (free(p10) + free(p8) + free(p9) + 
+         plot_layout(ncol = 1, axes = "keep") +
          plot_annotation(tag_levels = "A")) &
   theme(
     plot.tag = element_text(size = 30, family = "Arial", color = "black", face = "bold"))
 
 pb
 
-# ggsave("pb.png", pb, dpi = 600, unit = "mm")
+# ggsave("pb.jpeg", pb, dpi = 500, unit = "mm")
 
-#### region ~ maudit-c #########################################
+############### upset plots- poly use  ##########
 
-noctrl <- read_xlsx("brainstr_su/results/primary/1_region_audit_noThckCtrl.xlsx")%>%
-  filter(!y.var == "FS_BrainSeg_Vol_No_Vent")%>%
-  mutate(Dataset = "Before Thickness Covariate",
-         fdr = if_else(pfdr < 0.05, 1, 0 ))
+alc <- read_xlsx("HCP_raw/S1200_SSAGA_Raw_Released_Distribution_Sept2017.xlsx")%>%
+  select(Subject = "PUBLIC_ID...1", AL1)%>%
+  mutate(alc_user = ifelse (AL1 == "YES", 1, 0 ))%>%
+  select(-(AL1))
 
-ctrl <- read_xlsx("brainstr_su/results/primary/2_region_audit_ThckCtrl.xlsx")%>%
-  filter(!y.var == "FS_BrainSeg_Vol_No_Vent")%>%
-  mutate(Dataset = "After Thickness Covariate",
-         fdr = 0)
+base_dat <- left_join(base_dat, alc, by = "Subject")
 
-ctrl[24,] = noctrl [24,]
-ctrl[24,11] = "After Thickness Covariate"
-ctrl[24,12] = 0
+# polyuse plot 
 
-plot1 <- rbind(ctrl, noctrl)
-
-level_order <- unique(plot1$y.var)
-
-labels <- c(
-  "L Hippocampus", "R Hippocampus", "L Amygdala", "R Amygdala",
-  "L Cerebellum", "R Cerebellum", "L Caudal Middle Frontal", "R Caudal Middle Frontal",
-  "L Rostral Middle Frontal", "R Rostral Middle Frontal", "L Superior Frontal", "R Superior Frontal",
-  "L Inferior Temporal", "R Inferior Temporal", "L Middle Temporal", "R Middle Temporal",
-  "L Insula", "R Insula", "L Precuneus", "R Precuneus", "L Frontal Pole", "R Frontal Pole",
-  "Surface Area", "Brain Thickness")
-
-plot1 <- plot1%>%
+poly_dat <- base_dat %>%
   mutate(
-    ci_lower = Estimate - 1.96 * `Std. Error`,
-    ci_upper = Estimate + 1.96 * `Std. Error`,
-    type = as.factor(case_when(
-      y.var == "mean_Thck" ~ "Global",  
-      str_detect(y.var, "Vol$")  ~ "Volume",
-      str_detect(y.var, "Thck$") ~ "Thickness",
-      str_detect(y.var, "SA$") ~ "Global",
-      TRUE ~ as.character(NA))),
-    y.var = factor(y.var, levels = level_order, labels = labels),
-    y_numeric = as.numeric(factor(y.var, levels = rev(unique(y.var)))),
-    y_pos = ifelse(Dataset == "After Thickness Covariate",
-                   y_numeric + .7,
-                   y_numeric - .7),
-    stroke = ifelse(fdr ==1, 2, 1.5),
-    alpha = ifelse(fdr ==1, 1, 0.5),
-    size = ifelse(fdr ==1, 2, 1.5),
-    color = case_when(
-      y.var == "Brain Thickness" ~ "grey40",
-      Dataset == "After Thickness Covariate" ~ "#F8766C",
-      Dataset == "Before Thickness Covariate" ~ "#00BFC4"),
-    Dataset = factor(Dataset, levels = c("Before Thickness Covariate", "After Thickness Covariate")))%>%
-  group_by(type) %>%
-  arrange(y.var) %>%
-  mutate(y_numeric = row_number()) %>%
-  ungroup()
+    illic_user = ifelse(is.na(illic_user), 0, illic_user),
+    tobac_user = ifelse(is.na(tobac_user), 0, tobac_user),
+    thc_user   = ifelse(is.na(thc_user), 0, thc_user),
+    alc_user   = ifelse(is.na(alc_user), 0, alc_user),
+    illic_user = illic_user == 1,
+    tobac_user = tobac_user == 1,
+    thc_user   = thc_user == 1,
+    alc_user = alc_user == 1)%>%
+  rename(Alcohol = alc_user, 
+         Marijuana = thc_user, 
+         Tobacco = tobac_user,
+         `Illicit Drugs` = illic_user)
 
-plot1[47,17:19] = plot1[48,17:19]
+poly_dat$degree <- rowSums(poly_dat[, c("Illicit Drugs","Tobacco","Alcohol","Marijuana")])
 
-p1 <- ggplot(plot1, aes(x = Estimate, y = y.var, color = color, fill = color)) + 
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
-  geom_point(size = 3, shape = 21, alpha = plot1$alpha, fill = plot1$color,
-             stroke = plot1$stroke, color = plot1$color) +
-  geom_errorbarh(aes(xmin = ci_lower, xmax = ci_upper), height = 0, alpha = plot1$alpha, 
-                 size = plot1$size, color = plot1$color)+
-  theme_classic()+
-  facet_grid(type ~ Dataset,
-             labeller = "label_value",
-             scales = "free_y", switch = "y")+
+intersection <- upset(
+  poly_dat,
+  wrap = TRUE,
+  name = "Lifetime Drug Use Patterns",
+  intersect = c("Illicit Drugs", "Tobacco", "Alcohol", "Marijuana"),
+  sort_intersections_by = "degree",
+  sort_intersections = "ascending",
+  stripes = "grey95",
+  height_ratio = 0.35,
+  themes=upset_modify_themes(
+    list('intersections_matrix'=theme(
+      axis.text.y=element_text(color = "black", family = "Arial", size = 12),
+      axis.title.x=element_text(color = "black", family = "Arial", size = 12),
+      panel.grid = element_blank()))),
+  base_annotations = list(
+    "Intersection size" = intersection_size(
+      counts = TRUE,
+      width = 0.7,
+      bar_number_threshold = 1,
+      text = list(vjust = -0.5, size = 4, family = "Arial")) +
+      coord_cartesian(ylim = c(0, 350)) + 
+      theme_void() +
+      theme(
+        axis.title.y = element_text(vjust = -15, size = 12, family = "Arial"),
+        axis.line = element_line(color = "white")) +
+      ylab("Number of Users by Pattern")
+  ),
+  set_sizes = (
+    upset_set_size() +
+      expand_limits(y=1300)+
+      geom_bar (fill = "grey75", width = 0.6) +
+      geom_text(aes(label=..count..), hjust=1.2, stat='count', size = 4, family = "Arial") +
+      theme(
+        strip.background = element_rect(fill = "white"),
+        panel.grid = element_blank(),
+        axis.text = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_text(vjust = -17, size = 12, family = "Arial", color = "black"))+
+      ylab("Number of Lifetime \n Users by Drug")
+  ),
+  matrix = intersection_matrix(
+    geom = geom_point(shape = 19, size = 3),
+    segment = geom_segment(
+      linetype = "solid", linewidth = 1),
+    outline_color = list(
+      active = NA,     
+      inactive = NA)
+  ),
+  
+  ## colors##########
+  queries=list(
+    upset_query(
+      intersect=c('Marijuana', 'Tobacco'),
+      fill= "#7fb800",
+      color = "#7fb800",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Tobacco'),
+      fill= "#7fb800",
+      color = "#7fb800",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Illicit Drugs'),
+      fill= "#7fb800",
+      color = "#7fb800",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Marijuana'),
+      fill= "#7fb800",
+      color = "#7fb800",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Marijuana', 'Tobacco'),
+      fill="#1f77b4",
+      color = "#1f77b4",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Illicit Drugs', 'Tobacco'),
+      fill="#1f77b4",
+      color = "#1f77b4",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Marijuana', 'Illicit Drugs'),
+      fill="#1f77b4",
+      color = "#1f77b4",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol', 'Marijuana', 'Tobacco', 'Illicit Drugs'),
+      fill= "#E03426FF",
+      color = "#E03426FF",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Alcohol'),
+      fill= "#F28E2BFF",
+      color = "#F28E2BFF",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Marijuana'),
+      fill= "#F28E2BFF",
+      color = "#F28E2BFF",
+      only_components=c('intersections_matrix', 'Intersection size')),
+    upset_query(
+      intersect=c('Tobacco'),
+      fill= "#F28E2BFF",
+      color = "#F28E2BFF",
+      only_components=c('intersections_matrix', 'Intersection size')) 
+    ######
+  ))+
   theme(
-    text = element_text(family = "Arial"),
-    strip.placement = "left",
-    strip.text = element_text(size =25),
-    panel.spacing = unit(0, "lines"),
-    strip.background = element_rect(colour = "white", fill = "grey90"),
-    axis.text.x = element_text(color = "black", size = 25),
-    axis.title.x = element_text(color = "black", size = 30),
-    axis.text.y = element_text(color = "black", size = 30),
-    legend.position = "none",
-    plot.title = element_text(size = 35, face = "bold")
+    plot.margin = unit(c(0, 0, 0, 0), "mm"),
+    plot.tag = element_text(size = 20, family = "Arial", face = "bold", hjust = -1, vjust = 1.5),
+    plot.tag.position = c(0,1)
   )+
-  labs(x = "Standardized Regression Estimate (95% CI) \n Association With mAUDIT-C", 
-       y = "", color = NULL, fill = NULL, color = "black", size = 35)+
-  force_panelsizes(rows = unit(c(1.5,8.4,3.1), "in"), TRUE)
+  labs(tag = "B")
 
-p1
+intersection
 
-#ggsave("p1.png", p1, dpi = 600)
+ppoly <- (free(p11) + free(intersection) + 
+            plot_layout(ncol = 2, widths = c(1, 2)))
+
+ppoly
+
+# ggsave("ppoly.jpeg", ppoly, dpi = 500, units = "mm")
+
+#### mean thck ~ audit residual scatter ###############
+
+library(ggeffects) 
+
+winsorize = function(x,q=3){
+  
+  mean_x = mean(x,na.rm = T)
+  sd_x = sd(x,na.rm = T)
+  top_q = mean_x + q*sd_x
+  bottom_q = mean_x - q*sd_x
+  
+  x[x>top_q] = top_q
+  x[x<bottom_q] = bottom_q
+  
+  return(x)
+  
+}
+
+base_dat$Age1 = poly(base_dat$Age_in_Yrs,2)[,1] %>% scale(center = T,scale = T)
+base_dat$Age2 = poly(base_dat$Age_in_Yrs,2)[,2] %>% scale(center = T,scale = T)
+
+var.keep = c("Subject", "Gender", "MZ","DZ", "Half","Age1", "Age2", "Family_ID", 
+             "SSAGA_Income", "SSAGA_Educ","audit_c", "mean_Thck")
+
+var.names <-  c("Gender", "MZ","DZ", "Half", "audit_c", "mean_Thck", "SSAGA_Educ", "SSAGA_Income")
+var.mutate <- c("SSAGA_Income", "SSAGA_Educ", "audit_c", "mean_Thck")
+
+dat.analyze = base_dat %>%  dplyr::select(all_of(var.keep)) %>% na.omit()
+
+dat.analyze <- dat.analyze %>%
+  mutate(across(all_of(var.mutate), winsorize)) %>%
+  mutate(across(all_of(var.mutate), ~ if (abs(psych::skew(.x)) > 1){log(.x + 2)}else{.x})) %>%
+  mutate(across(all_of(var.names), ~ scale(.x, center = TRUE, scale = TRUE)[, 1]))
+
+m1 <- lmerTest::lmer(mean_Thck ~ 
+                       audit_c +
+                       SSAGA_Income + 
+                       SSAGA_Educ + 
+                       Age1 + 
+                       Age2 + 
+                       Gender +
+                       MZ + 
+                       DZ + 
+                       Half +
+                       (1 | Family_ID), data = dat.analyze)
+
+dat.analyze$residuals <- residuals(m1)
+
+res <- dat.analyze %>%
+  select(Subject, residuals)
+
+base_dat <- left_join(base_dat, res, by = "Subject")  
+
+var.keep = c("Subject", "Gender", "MZ","DZ", "Half","Age1", "Age2", "Family_ID", 
+             "SSAGA_Income", "SSAGA_Educ","audit_c", "mean_Thck")
+
+var.names <-  c("Gender", "MZ","DZ", "Half", "mean_Thck", "SSAGA_Educ", "SSAGA_Income")
+var.mutate <- c("SSAGA_Income", "SSAGA_Educ", "mean_Thck")
+
+dat.analyze = base_dat %>%  dplyr::select(all_of(var.keep)) %>% na.omit()
+
+dat.analyze <- dat.analyze %>%
+  mutate(across(all_of(var.mutate), winsorize)) %>%
+  mutate(across(all_of(var.mutate), ~ if (abs(psych::skew(.x)) > 1){log(.x + 2)}else{.x})) %>%
+  mutate(across(all_of(var.names), ~ scale(.x, center = TRUE, scale = TRUE)[, 1]))
+
+m1 <- lmerTest::lmer(mean_Thck ~ 
+                       audit_c +
+                       SSAGA_Income + 
+                       SSAGA_Educ + 
+                       Age1 + 
+                       Age2 + 
+                       Gender +
+                       MZ + 
+                       DZ + 
+                       Half +
+                       (1 | Family_ID), data = dat.analyze)
+
+dat <- predict_response(m1, terms = "audit_c", type = "fixed")
+
+dat <- dat%>%
+  rename(audit_c = x, residuals = predicted)
+
+scatter <- ggplot(base_dat, aes(x = audit_c, y = residuals)) +
+  geom_pointdensity(size = 3)+
+  geom_smooth(data = dat, color = "deeppink4", method = "lm", se = FALSE)+
+  scale_color_viridis(option = "G", direction = -1)+
+  theme_classic()+
+  labs(x = "Hazardous Alcohol Use", y = "Standardized Adjusted Global Thickness")+
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12))+
+  theme(
+    legend.position = "none",
+    text = element_text(family = "Arial"))
+
+scatter
+
+# ggsave("scatter.jpeg", scatter, dpi = 500, units = "cm")
 
 ##################### mean_Thck ~ SU Vars ###################
 
@@ -280,9 +446,9 @@ plot2$xvar <- plot2$xvar %>%
 
 p2 <- ggplot(plot2, aes(x = Estimate, y = xvar)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
-  geom_point(aes(alpha = alpha, stroke = 1), fill = "#47894b", color = "#47894b",
+  geom_point(aes(alpha = alpha, stroke = 1), fill = "#5ebba0", color = "#5ebba0",
              size = 3, shape = 21, show.legend = FALSE) +
-  geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), height = 0, color = "#47894b", 
+  geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), height = 0, color = "#5ebba0", 
                  alpha = plot2$alpha, size = plot2$size, show.legend = FALSE)+
   theme_classic()+
   labs(x = "Standardized Regression Estimate (95% CI) \nAssociation With Global Brain Thickness", y = "")+
@@ -298,7 +464,7 @@ p2 <- ggplot(plot2, aes(x = Estimate, y = xvar)) +
              shape = 8, size = 2.5, color = "black")
 p2
 
-#ggsave("p2.png", p2, dpi = 600, units = "mm")
+ # ggsave("p2.jpeg", p2, dpi = 500, units = "mm")
 
 ############## mean_thck ~ wtn/btwn fam SU #########################
 
@@ -312,10 +478,10 @@ plot3 <- read_xlsx("brainstr_su/results/primary/5_meanThck_wtnbtwn.xlsx")%>%
         str_detect(x.var, "within") ~ "Within-Family",
         str_detect(x.var, regex("mean", ignore_case = TRUE)) ~ "Between-Family"),
       my_color = case_when(
-        sample == "whole" ~ "#FDB366",
-        sample =="Half != 1" ~ "#F67E4B",
-        sample == "MZ == 1 | DZ == 1" ~ "#DD3D2D",
-        sample =="MZ == 1" ~ "#A50026"),
+        sample == "whole" ~ "#F5CB63FF",
+        sample =="Half != 1" ~ "#F7A84AFF",
+        sample == "MZ == 1 | DZ == 1" ~ "#EF731EFF",
+        sample =="MZ == 1" ~ "#9E3A26FF"),
       drug_group_sample = interaction(drug, group, sample, sep = "_"),
       order = factor(sample, levels = c(
           "MZ == 1", "MZ == 1 | DZ == 1", "Half != 1", "whole")))%>%
@@ -494,9 +660,9 @@ p5 <- ggplot(plot5, aes(y = x.var, x = estimate, fill = type, color = type)) +
   geom_errorbarh(aes(xmin = ci_lower_std, xmax = ci_upper_std),
                  size = plot5$size,  height = 0, position = dodge) +
   scale_fill_manual(
-    values = c("Heritability" = "#C1447EFF", "Environmental Variance" = "#8BAC54FF")) +
+    values = c("Heritability" = "#c1447e", "Environmental Variance" = "#8bac54")) +
   scale_color_manual(
-    values = c("Heritability" = "#C1447EFF", "Environmental Variance" = "#8BAC54FF")) +
+    values = c("Heritability" = "#c1447e", "Environmental Variance" = "#8bac54")) +
   labs(x = "Standardized Estimate (95% CI)", y = "", fill = "", color = "") +
   theme_classic() +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0))+
@@ -550,12 +716,12 @@ p6 <- ggplot(plot6, aes(y = x.var, x = Estimate, fill = type, color = type)) +
   geom_errorbarh(aes(xmin = ci_lower_std, xmax = ci_upper_std),
                  size = plot6$size, alpha = plot6$alpha, height = 0, position = dodge) +
   scale_fill_manual(
-    values = c("Additive Genetics" = "#3A488AFF", "Non-Shared Environment" = "#BE3428FF"),
+    values = c("Additive Genetics" = "#1f77b4", "Non-Shared Environment" = "#EF2929FF"),
     guide = guide_legend(reverse = TRUE)) +
   guides(color = guide_legend(ncol = 1, nrow = 2, reverse = TRUE),
          fill  = guide_legend(reverse = TRUE))+
   scale_color_manual(
-    values = c("Additive Genetics" = "#3A488AFF", "Non-Shared Environment" = "#BE3428FF"),
+    values = c("Additive Genetics" = "#1f77b4", "Non-Shared Environment" = "#EF2929FF"),
     guide = guide_legend(reverse = TRUE)) +
   labs(x = "Variance Component Correlation (95% CI)", y = "", fill = "", color = "") +
   theme_classic() +
@@ -583,9 +749,97 @@ p7 <- (p3) / (p4) / (p5 | p6)+
 
 p7
 
-#ggsave("p7.png", p7, dpi = 600, units = "cm")
+ # ggsave("p7.jpeg", p7, dpi = 500, units = "cm")
 
 ########## SUPPLEMENTARY MATERIALS PLOTS #############
+
+#### region ~ maudit-c #########################################
+
+noctrl <- read_xlsx("brainstr_su/results/primary/1_region_audit_noThckCtrl.xlsx")%>%
+  filter(!y.var == "FS_BrainSeg_Vol_No_Vent")%>%
+  mutate(Dataset = "Before Thickness Covariate",
+         fdr = if_else(pfdr < 0.05, 1, 0 ))
+
+ctrl <- read_xlsx("brainstr_su/results/primary/2_region_audit_ThckCtrl.xlsx")%>%
+  filter(!y.var == "FS_BrainSeg_Vol_No_Vent")%>%
+  mutate(Dataset = "After Thickness Covariate",
+         fdr = 0)
+
+ctrl[24,] = noctrl [24,]
+ctrl[24,11] = "After Thickness Covariate"
+ctrl[24,12] = 0
+
+plot1 <- rbind(ctrl, noctrl)
+
+level_order <- unique(plot1$y.var)
+
+labels <- c(
+  "L Hippocampus", "R Hippocampus", "L Amygdala", "R Amygdala",
+  "L Cerebellum", "R Cerebellum", "L Caudal Middle Frontal", "R Caudal Middle Frontal",
+  "L Rostral Middle Frontal", "R Rostral Middle Frontal", "L Superior Frontal", "R Superior Frontal",
+  "L Inferior Temporal", "R Inferior Temporal", "L Middle Temporal", "R Middle Temporal",
+  "L Insula", "R Insula", "L Precuneus", "R Precuneus", "L Frontal Pole", "R Frontal Pole",
+  "Surface Area", "Brain Thickness")
+
+plot1 <- plot1%>%
+  mutate(
+    ci_lower = Estimate - 1.96 * `Std. Error`,
+    ci_upper = Estimate + 1.96 * `Std. Error`,
+    type = as.factor(case_when(
+      y.var == "mean_Thck" ~ "Global",  
+      str_detect(y.var, "Vol$")  ~ "Volume",
+      str_detect(y.var, "Thck$") ~ "Thickness",
+      str_detect(y.var, "SA$") ~ "Global",
+      TRUE ~ as.character(NA))),
+    y.var = factor(y.var, levels = level_order, labels = labels),
+    y_numeric = as.numeric(factor(y.var, levels = rev(unique(y.var)))),
+    y_pos = ifelse(Dataset == "After Thickness Covariate",
+                   y_numeric + .7,
+                   y_numeric - .7),
+    stroke = ifelse(fdr ==1, 2, 1.5),
+    alpha = ifelse(fdr ==1, 1, 0.5),
+    size = ifelse(fdr ==1, 2, 1.5),
+    color = case_when(
+      y.var == "Brain Thickness" ~ "grey40",
+      Dataset == "After Thickness Covariate" ~ "violetred3",
+      Dataset == "Before Thickness Covariate" ~ "#1f77b4"),
+    Dataset = factor(Dataset, levels = c("Before Thickness Covariate", "After Thickness Covariate")))%>%
+  group_by(type) %>%
+  arrange(y.var) %>%
+  mutate(y_numeric = row_number()) %>%
+  ungroup()
+
+plot1[47,17:19] = plot1[48,17:19]
+
+p1 <- ggplot(plot1, aes(x = Estimate, y = y.var, color = color, fill = color)) + 
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
+  geom_point(size = 3, shape = 21, alpha = plot1$alpha, fill = plot1$color,
+             stroke = plot1$stroke, color = plot1$color) +
+  geom_errorbarh(aes(xmin = ci_lower, xmax = ci_upper), height = 0, alpha = plot1$alpha, 
+                 size = plot1$size, color = plot1$color)+
+  theme_classic()+
+  facet_grid(type ~ Dataset,
+             labeller = "label_value",
+             scales = "free_y", switch = "y")+
+  theme(
+    text = element_text(family = "Arial"),
+    strip.placement = "left",
+    strip.text = element_text(size =25),
+    panel.spacing = unit(0, "lines"),
+    strip.background = element_rect(colour = "white", fill = "grey90"),
+    axis.text.x = element_text(color = "black", size = 25),
+    axis.title.x = element_text(color = "black", size = 30),
+    axis.text.y = element_text(color = "black", size = 30),
+    legend.position = "none",
+    plot.title = element_text(size = 35, face = "bold")
+  )+
+  labs(x = "Standardized Regression Estimate (95% CI) \n Association With mAUDIT-C", 
+       y = "", color = NULL, fill = NULL, color = "black", size = 35)+
+  force_panelsizes(rows = unit(c(1.5,8.4,3.1), "in"), TRUE)
+
+p1
+
+ # ggsave("p1.jpeg", p1, dpi = 500, units = "mm")
 
 ######## sample characteristics ###############
 
@@ -600,11 +854,13 @@ gend <- data.frame(
 
 pgend <- ggplot(gend, aes(x = Gender, y = value, fill = Gender)) +
   geom_col()+
-  scale_fill_manual(values = c("#E691BB", "#7aaad3")) +
-  theme_classic() +                                              
+  scale_fill_manual(values = c("violetred3", "#1f77b4")) +
+  theme_classic() + 
+  labs (tag = "A")+
   theme(
     legend.position = "none", 
     text = element_text(family = "Arial", color = "black"),
+    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
     axis.title.y = element_blank(),
     axis.text.y = element_text(color = "black", size = 21),
     axis.text.x = element_text(color = "black", size = 21),
@@ -619,17 +875,19 @@ age <- table(samp$Age_in_Yrs)%>%
   data.frame()%>%
   rename(Age = Var1, value = Freq)
 
-page <- ggplot(age, aes(x = Age, y = value, fill = value)) +
+page <- ggplot(age, aes(x = Age, y = value, fill = Age)) +
   geom_col()+
-  scale_fill_gradient(low = "#D0EEF9", high = "#2182C7") +
+  scale_fill_manual(values = colorRampPalette(c("#fae587","#e27950"))(nrow(age))) +
   scale_x_discrete(breaks = levels(age$Age)[seq(1, length(levels(age$Age)), by = 2)]) +
   scale_y_continuous(breaks = seq(0, max(age$value), by = 25)) +
-  theme_classic() +                                              
+  theme_classic() +       
+  labs(tag = "C")+
   theme(
     legend.position = "none", 
     text = element_text(family = "Arial", color = "black"),
     axis.title.y = element_blank(),
     axis.text.y = element_text(color = "black", size = 21),
+    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
     axis.text.x = element_text(color = "black", size = 21),
     axis.title.x = element_blank(),                           
     plot.title = element_text(size = 27, hjust = 0)) +
@@ -651,16 +909,18 @@ income <- data.frame(table(samp$SSAGA_Income))%>%
                          "7" = "$75K–99,999",
                          "8" = "≥$100,000"))
 
-pinc <- ggplot(income, aes(x = Income, y = value, fill = value)) +
+pinc <- ggplot(income, aes(x = Income, y = value, fill = Income)) +
   geom_col()+
-  scale_fill_gradient(low = "#e79094", high = "#CE2128")+
-  theme_classic() +                                              
+  scale_fill_manual(values = colorRampPalette(c("#d0ccf4","#3f72bf"))(nrow(income)))+
+  theme_classic() + 
+  labs(tag = "D")+
   theme(
     legend.position = "none", 
     text = element_text(family = "Arial", color = "black"),
     axis.title.y = element_blank(),
     axis.text.y = element_text(color = "black", size = 21),
     axis.text.x = element_text(color = "black", size = 18, angle = 45, hjust = 1),
+    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
     axis.title.x = element_blank(),                           
     plot.title = element_text(size = 27, hjust = 0)) +
   ggtitle("Yearly Income")
@@ -691,20 +951,25 @@ race <- data.frame(table(samp$Race)) %>%
 
 prace <- ggplot(race, aes(x = Race, y = value, fill = Race)) +
   geom_col()+
-  scale_fill_viridis_d(option = "C")+
+  scale_fill_manual(values = c("#fae587", "#5ebba0", "#9f9cca", "#e48f4e", "violetred3", "#1f77b4"))+
   ylim(0, 900)+
   geom_text(aes(label = value, y = value + 10, family = "Arial", size = 18),
             position = position_dodge(0.9), vjust = 0) +
-  theme_classic() +                                              
+  theme_classic() + 
+  labs(tag = "E", y = "blank")+
   theme(
     legend.position = "none", 
     text = element_text(family = "Arial", color = "black"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_text(color = "black", size = 18),
+    axis.title.y = element_text(color ="white"),
+    axis.ticks.y = element_blank(),
+    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
+    axis.text.y = element_text(size = 10, color = "white"),
     axis.text.x = element_text(color = "black", size = 20, angle = 45, hjust = 1),
     axis.title.x = element_blank(),                           
     plot.title = element_text(size = 27, hjust = 0)) +
   ggtitle("Racial Identity")
+
+prace
 
 #education 
 
@@ -715,15 +980,17 @@ educ <- data.frame(table(samp$SSAGA_Educ))%>%
     TRUE ~ as.character(`Years Completed`)
   ))
 
-pedu <- ggplot(educ, aes(x = `Years Completed`, y = value, fill = value)) +
+pedu <- ggplot(educ, aes(x = `Years Completed`, y = value, fill = `Years Completed`)) +
   geom_col()+
-  scale_fill_gradient(low = "#ffd08f", high = "#ffa01f")+
-  theme_classic() +                                              
+  scale_fill_manual(values = colorRampPalette(c("#ffc6c4", "#ad466c"))(nrow(educ)))+
+  theme_classic() +
+  labs(tag="B")+
   theme(
     legend.position = "none", 
     text = element_text(family = "Arial", color = "black"),
     axis.title.y = element_blank(),
     axis.text.y = element_text(color = "black", size = 18),
+    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
     axis.text.x = element_text(color = "black", size = 20),
     axis.title.x = element_blank(),                           
     plot.title = element_text(size = 27, hjust = 0)) +
@@ -744,24 +1011,38 @@ sibstat$sibling_status <- factor(
 
 psib <- ggplot(sibstat, aes(x = `sibling_status`, y = value, fill = `sibling_status`)) +
   geom_col()+
-  scale_fill_viridis_d(option = "D", begin = 0, end = 0.8, direction = 1)+
-  theme_classic() +                                              
+  scale_fill_manual(values = c("#1f77b4", "#5ebba0", "#9f9cca", "violetred3", "#e48f4e"))+
+  theme_classic() +       
+  geom_text(aes(label = value, y = value + 10, family = "Arial", size = 18),
+            position = position_dodge(0.9), vjust = 0) +
+  labs(tag="F", y = "blank")+
   theme(
     legend.position = "none", 
     text = element_text(family = "Arial", color = "black"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_text(color = "black", size = 18),
+    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
+    axis.text.y = element_text(size = 10, color = "white"),
+    axis.title.y = element_text(size = 10, color = "white"),
+    axis.ticks.y = element_blank(),
     axis.text.x = element_text(color = "black", size = 20, angle = 45, hjust = 1),
     axis.title.x = element_blank(),                           
     plot.title = element_text(size = 27, hjust = 0)) +
   ggtitle("Sibling Status")
 psib
 
-pa <- (pgend | page | pedu) / (pinc | prace | psib)
+pa <- (pedu | page | pinc) / (pgend | prace | psib)+
+  plot_layout(widths = c(2, 7, 5))
+
+pa1 <- pgend + pedu + page + 
+  plot_layout(widths = c(1, 2, 2), ncol = 3)
+
+pa2 <- pinc + prace + psib +
+  plot_layout(widths = c(1, 1, 1), ncol = 3)
+
+pa <- pa1 / pa2
 
 pa
 
- #ggsave("pa.png", pa, dpi = 600, unit = "mm")
+ # ggsave("pa.jpeg", pa, dpi = 500, unit = "mm")
 
 
 ######### mean_thck ~ primary + 2ndary SU vars #########
@@ -791,9 +1072,9 @@ plot8 <- rbind(plot8, plot2)
 p8 <- ggplot(plot8, aes(x = Estimate, y = xvar)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
   geom_hline(yintercept = 9.5, linetype = "solid", color = "black")+
-  geom_point(aes(alpha = alpha, stroke = 1), fill = "#47894b", color = "#47894b",
+  geom_point(aes(alpha = alpha, stroke = 1), fill = "#5ebba0", color = "#5ebba0",
              size = 3, shape = 21, show.legend = FALSE) +
-  geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), height = 0, color = "#47894b", 
+  geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), height = 0, color = "#5ebba0", 
                  alpha = plot8$alpha, size = plot8$size, show.legend = FALSE)+
   theme_classic()+
   labs(x = "Standardized Regression Estimate (95% CI) \nAssociation With Global Brain Thickness", y = "")+
@@ -808,7 +1089,7 @@ p8 <- ggplot(plot8, aes(x = Estimate, y = xvar)) +
              shape = 8, size = 2.5, color = "black")
 p8
 
- #ggsave("p8.png", p8, dpi = 600, units = "mm")
+ # ggsave("p8.jpeg", p8, dpi = 500, units = "mm")
 
 ########### unique mean_thck ~ wtn/btwn SU #################
 
@@ -835,12 +1116,12 @@ p9 <- ggplot(plot9, aes(y = y.axis, x = Estimate, color = Sample)) +
   geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), position = dodge, 
                  height = 0, size = 1)+
   scale_color_manual(
-    values = c("Entire Sample" = "#4a78a7", "Full Siblings" = "#b73351"))+
+    values = c("Entire Sample" = "#1f77b4", "Full Siblings" = "violetred3"))+
   scale_fill_manual(
-    values = c("Entire Sample" = "#4a78a7", "Full Siblings" = "#b73351"))+
+    values = c("Entire Sample" = "#1f77b4", "Full Siblings" = "violetred3"))+
   facet_grid(y.axis ~ Covariates, scales = "free_y", space = "free_y")+
   theme_classic()+
-  theme(
+  theme(   
     text = element_text(family = "Arial"),
     axis.text.y = element_text(color = "black", size = 14),
     axis.text.x = element_text(color = "black", size = 12),
@@ -859,7 +1140,7 @@ p9 <- ggplot(plot9, aes(y = y.axis, x = Estimate, color = Sample)) +
 
 p9
 
-#ggsave("p9.png", p9, dpi = 600, units = "mm")
+ # ggsave("p9.jpeg", p9, dpi = 500, units = "mm")
 
 ########## mediation test ###################################
 
@@ -935,7 +1216,7 @@ p10 <- ggplot(plot10, aes(y = xvar, x = Estimate, color = xvar)) +
 
 p10
 
- #ggsave("p.10.png", p10, dpi = 600, units = "mm")
+# ggsave("p.10.jpeg", p10, dpi = 500, units = "mm")
 
 
 ######### all brain~ all drugs (no mean_thck covar) ################
@@ -973,7 +1254,7 @@ xvar_colors <- c(
   get_shades(plot11 %>% filter(drugtype == "Alcohol") %>% pull(xvar) %>% unique(), "#f6511d"),
   get_shades(plot11 %>% filter(drugtype == "Marijuana") %>% pull(xvar) %>% unique(), "#7fb800"),
   get_shades(plot11 %>% filter(drugtype == "Tobacco") %>% pull(xvar) %>% unique(), "#ffb400"),
-  get_shades(plot11 %>% filter(drugtype == "Illicit Drugs") %>% pull(xvar) %>% unique(), "#56B4E9FF")
+  get_shades(plot11 %>% filter(drugtype == "Illicit Drugs") %>% pull(xvar) %>% unique(), "#00a6ed")
 ) %>% unlist()
 
 p11 <- ggplot(plot11, aes(x = -log10(`Pr(>|t|)`), y = ypos_factor, fill = xvar)) +
@@ -1125,152 +1406,9 @@ p14 <- (p11 | p12 | p13)+
   theme(plot.tag = element_text(size = 15, face = "bold"))
 p14
   
-# ggsave("p14.png", p14, dpi = 600, units = "mm")
+ # ggsave("p14.jpeg", p14, dpi = 500, units = "mm")
 
-############### upset plots- poly use & heavy use ##########
 
-alc <- read_xlsx("HCP_raw/S1200_SSAGA_Raw_Released_Distribution_Sept2017.xlsx")%>%
-  select(Subject = "PUBLIC_ID...1", AL1)%>%
-  mutate(alc_user = ifelse (AL1 == "YES", 1, 0 ))%>%
-  select(-(AL1))
-
-base_dat <- left_join(base_dat, alc, by = "Subject")
-
-# polyuse plot 
-
-poly_dat <- base_dat %>%
-  mutate(
-    illic_user = ifelse(is.na(illic_user), 0, illic_user),
-    tobac_user = ifelse(is.na(tobac_user), 0, tobac_user),
-    thc_user   = ifelse(is.na(thc_user), 0, thc_user),
-    alc_user   = ifelse(is.na(alc_user), 0, alc_user),
-    illic_user = illic_user == 1,
-    tobac_user = tobac_user == 1,
-    thc_user   = thc_user == 1,
-    alc_user = alc_user == 1)%>%
-  rename(Alcohol = alc_user, 
-         Marijuana = thc_user, 
-         Tobacco = tobac_user,
-         `Illicit Drugs` = illic_user)
-
-poly_dat$degree <- rowSums(poly_dat[, c("Illicit Drugs","Tobacco","Alcohol","Marijuana")])
-
-upset(
-  poly_dat,
-  wrap = TRUE,
-  name = "Lifetime Drug Use Patterns",
-  intersect = c("Illicit Drugs", "Tobacco", "Alcohol", "Marijuana"),
-  sort_intersections_by = "degree",
-  sort_intersections = "ascending",
-  stripes = "grey95",
-  height_ratio = 0.35,
-  theme=
-    list('intersections_matrix'=theme(
-      axis.text=element_text(color = "black", family = "Arial", size = 10),
-      panel.grid = element_blank())),
-  base_annotations = list(
-    "Intersection size" = intersection_size(
-      counts = TRUE,
-      width = 0.9,
-      bar_number_threshold = 1,
-      text = list(vjust = -0.5, size = 3.75, family = "Arial")) +
-      coord_cartesian(ylim = c(0, 350)) + 
-      theme_void() +
-      theme(
-        axis.title.y = element_text(vjust = -15, size = 12, family = "Arial"),
-        axis.line = element_line(color = "white")) +
-      ylab("Number of Users by Pattern")
-  ),
-  set_sizes = (
-    upset_set_size() +
-      expand_limits(y=1300)+
-      geom_bar (fill = "grey75", width = 0.6) +
-      geom_text(aes(label=..count..), hjust=1.2, stat='count', size = 3.5, family = "Arial") +
-      theme(
-        strip.background = element_rect(fill = "white"),
-        panel.grid = element_blank(),
-        axis.text = element_blank(),
-        axis.text.x = element_blank(),
-        axis.title.y = element_text(vjust = -17, size = 12, family = "Arial", color = "black"))+
-      ylab("Number of Lifetime \n Users by Drug")
-  ),
-  matrix = intersection_matrix(
-    geom = geom_point(shape = 19, size = 5.5),
-    segment = geom_segment(
-      linetype = "solid", linewidth = 1),
-    outline_color = list(
-      active = NA,     
-      inactive = NA)
-  ),
-  
-  ## colors##########
-  queries=list(
-    upset_query(
-      intersect=c('Marijuana', 'Tobacco'),
-      fill= "#7fb800",
-      color = "#7fb800",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Tobacco'),
-      fill= "#7fb800",
-      color = "#7fb800",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Illicit Drugs'),
-      fill= "#7fb800",
-      color = "#7fb800",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Marijuana'),
-      fill= "#7fb800",
-      color = "#7fb800",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Marijuana', 'Tobacco'),
-      fill="#00a6ed",
-      color = "#00a6ed",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Illicit Drugs', 'Tobacco'),
-      fill="#00a6ed",
-      color = "#00a6ed",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Marijuana', 'Illicit Drugs'),
-      fill="#00a6ed",
-      color = "#00a6ed",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol', 'Marijuana', 'Tobacco', 'Illicit Drugs'),
-      fill= "#E6352FFF",
-      color = "#E6352FFF",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Alcohol'),
-      fill= "#ffb400",
-      color = "#ffb400",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Marijuana'),
-      fill= "#ffb400",
-      color = "#ffb400",
-      only_components=c('intersections_matrix', 'Intersection size')),
-    upset_query(
-      intersect=c('Tobacco'),
-      fill= "#ffb400",
-      color = "#ffb400",
-      only_components=c('intersections_matrix', 'Intersection size')) 
-    ######
-  ))+
-  theme(
-    plot.margin = unit(c(0, 0, 0, 0), "mm"),
-    plot.tag = element_text(size = 30, family = "Arial", face = "bold", hjust = -1, vjust = 1.5),
-    plot.tag.position = c(0,1)
-  )+
-  labs(tag = "A")
-  
-
-intersection
 
 ##### heavy use Upset Plot ######################
 
@@ -1306,7 +1444,8 @@ heavy_use <- upset(
   height_ratio = 0.35,
   themes=upset_modify_themes(
     list('intersections_matrix'=theme(
-      axis.text=element_text(color = "black", family = "Arial", size = 10),
+      axis.text.y=element_text(color = "black", family = "Arial", size = 12),
+      axis.title=element_text(color = "black", family = "Arial", size = 12),
       panel.grid = element_blank()))),
   base_annotations = list(
     "Intersection size" = intersection_size(
@@ -1317,7 +1456,7 @@ heavy_use <- upset(
       coord_cartesian(ylim = c(0, 800)) + 
       theme_void() +
       theme(
-        axis.title.y = element_text(vjust = -35, size = 12, family = "Arial"),
+        axis.title.y = element_text(vjust = -45, size = 12, family = "Arial"),
         axis.line = element_line(color = "white")) +
       ylab("Number of Users by Pattern")
   ),
@@ -1332,7 +1471,7 @@ heavy_use <- upset(
         axis.text = element_blank(),
         axis.text.x = element_blank(),
         axis.title.y = element_text(vjust = -30, size = 12, family = "Arial", color = "black"))+
-      ylab("Number of Hazardous \n Users by Drug ")
+      ylab("Number of Hazardous Users by Drug ")
   ),
   matrix = intersection_matrix(
     geom = geom_point(shape = 19, size = 5.5),
@@ -1378,28 +1517,28 @@ heavy_use <- upset(
       only_components=c('intersections_matrix', 'Intersection size')),
     upset_query(
       intersect=c("Heavy Tobacco Use", "*Severe Alcohol Use", "Heavy Marijuana Use"),
-      fill="#00a6ed",
-      color = "#00a6ed",
+      fill="#1f77b4",
+      color = "#1f77b4",
       only_components=c('intersections_matrix', 'Intersection size')),
     upset_query(
       intersect=c("Heavy Marijuana Use", "Heavy Illicit Drug Use", "Heavy Tobacco Use"),
-      fill="#00a6ed",
-      color = "#00a6ed",
+      fill="#1f77b4",
+      color = "#1f77b4",
       only_components=c('intersections_matrix', 'Intersection size')),
     upset_query(
       intersect=c("Heavy Tobacco Use", "Heavy Illicit Drug Use", "*Severe Alcohol Use"),
-      fill="#00a6ed",
-      color = "#00a6ed",
+      fill="#1f77b4",
+      color = "#1f77b4",
       only_components=c('intersections_matrix', 'Intersection size')),
     upset_query(
       intersect=c("Heavy Marijuana Use", "Heavy Illicit Drug Use", "*Severe Alcohol Use"),
-      fill="#00a6ed",
-      color = "#00a6ed",
+      fill="#1f77b4",
+      color = "#1f77b4",
       only_components=c('intersections_matrix', 'Intersection size')),
     upset_query(
       intersect=c("Heavy Marijuana Use", "Heavy Illicit Drug Use", "*Severe Alcohol Use", "Heavy Tobacco Use"),
-      fill= "#f6511d",
-      color = "#f6511d",
+      fill= "#c51b8a",
+      color = "#c51b8a",
       only_components=c('intersections_matrix', 'Intersection size')),
     upset_query(
       intersect=c("Heavy Marijuana Use"),
@@ -1427,15 +1566,12 @@ heavy_use <- upset(
   ######
 theme(
   plot.margin = unit(c(0, 0, 0, 0), "mm"),
-  plot.tag = element_text(size = 30, family = "Arial", face = "bold", hjust = -1, vjust = 1.5),
+  plot.tag = element_text(size = 20, family = "Arial", face = "bold", hjust = -1, vjust = 1.5),
   plot.tag.position = c(0,1)
-)+
-  labs(tag = "B")
+)
 
 heavy_use
 
-upsets <- intersection | heavy_use
+ # ggsave("heavy.jpeg", heavy_use, dpi = 500, units = "mm")
 
-upsets
 
-##ggsave("upsets.png", upsets, dpi = 600, units = "mm")
