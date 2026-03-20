@@ -44,23 +44,21 @@ In each script, analyses/calculations are separated by hashes and include identi
 ## 4_plots.R
 1.	PRIMARY MATERIALS PLOTS
 - a.	SU endorsement
-- b.	region ~ maudit c
-- c.	mean_Thck ~ SU vars
-- d.	mean_Thck ~ wtn/btwn fam SU
-- e.	SU vars ~ wtn/btwn mean_Thck
-- f.	SOLAR-Eclipse heritability & variance component corr
-- g.	combined wtn/btwn & solar analyses 
+- b.	upset plots- poly use
+- c.	mean_thck ~ audit residual scatter
+- d.	mean_Thck ~ SU vars
+- e.	mean_Thck ~ wtn/btwn fam SU
+- f.	SU vars ~ wtn/btwn mean_Thck
+- g.	SOLAR-Eclipse heritability & variance component corr
+- h.	combined wtn/btwn & solar analyses 
 2.	SUPPLEMENTARY MATERIALS PLOTS
-- a.	sample characteristics
-- b.	mean_thck ~ primary + 2ndary SU vars
-- c.	unique mean_thck ~ wtn/btwn SU
-- d.	mediation test
-- e.	all brain ~ all drugs (no mean_thck covar)
-- f.	all brain ~ all drugs + meanthck
-- g.	original regions ~ all drugs
-- h.	brain ~ drugs comparison
-- i.	upset plots- poly use
+- a.	region ~ maudit c
+- b.	sample characteristics
+- c.	mean_thck ~ primary + 2ndary SU vars
+- d.	unique mean_thck ~ wtn/btwn SU
+- e.	mediation test
+- f.	all brain ~ all drugs (no mean_thck covar)
+- g.	all brain ~ all drugs + meanthck
+- h.	original regions ~ all drugs
+- i.	brain ~ drugs comparison
 - j.	heavy use Upset Plot
-- k.	mean_thck ~ audit residual scatter 
-
-
