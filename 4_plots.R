@@ -25,8 +25,9 @@ library(systemfonts)
 library(showtext)
 library(UpSetR)
 library(ComplexUpset)
+library(grid)
 
-base_dat <- read_xlsx("brainstr_su/datasets/base_dat.xlsx")
+base_dat <- read_xlsx("Daniella/brainstr_su/datasets/base_dat.xlsx")
 
 ############# PRIMARY MATERIALS PLOTS ##################
 
@@ -95,22 +96,19 @@ p8 <- ggplot(tobacco_counts, aes(x = Tobacco_use, y = n, fill = Tobacco_use)) +
   scale_fill_manual(values = colorRampPalette(c("#bdd7e7","#08306b"))(nrow(tobacco_counts))) +
   labs(title = "Times Used Tobacco", x = NULL, y = NULL) +
   coord_cartesian(ylim = c(0, max_count)) +
-  theme_classic() +
-  theme(axis.text.x = element_text(size = 18, color = "black"),
-        legend.position = "none",
-        text = element_text(size = 18, family = "Arial"), 
-        axis.text.y = element_text(size = 18, color = "black"))
+  theme_classic(base_size = 6) +
+  theme(plot.title = element_text(size = 7),
+        legend.position = "none")
 p8
+
 p9 <- ggplot(illicits_counts, aes(x = Illicits_use, y = n, fill = Illicits_use)) +
   geom_col() +
   scale_fill_manual(values = colorRampPalette(c("#fde0dd","#c51b8a"))(nrow(illicits_counts))) +
   labs(title = "Times Used Illicit Drugs", x = NULL, y = NULL) +
   coord_cartesian(ylim = c(0, max_count)) +
-  theme_classic() +
-  theme(axis.text.x = element_text(size = 18, color = "black"),
-        legend.position = "none",
-        text = element_text(size = 18, family = "Arial"), 
-        axis.text.y = element_text(size = 18, color = "black"))
+  theme_classic(base_size = 6) +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 7))
 p9
 
 p10 <- ggplot(marijuana_counts, aes(x = Marijuana_use, y = n, fill = Marijuana_use)) +
@@ -118,56 +116,52 @@ p10 <- ggplot(marijuana_counts, aes(x = Marijuana_use, y = n, fill = Marijuana_u
   scale_fill_manual(values = colorRampPalette(c("#A3D492","#3f5938"))(nrow(marijuana_counts)))+
   labs(title = "Times Used Marijuana", x = NULL, y = NULL) +
   coord_cartesian(ylim = c(0, max_count)) +
-  theme_classic() +
-  theme(axis.text.x = element_text(size = 18, color = "black"),
-        legend.position = "none",
-        text = element_text(family = "Arial", size = 18),
-        axis.text.y = element_text(size = 18, color = "black"))
+  theme_classic(base_size = 6) +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 7))
 
 p10
 
 ## note: p11 is created here but used in the "upset plots- poly use & heavy use" portion 
 p11 <- ggplot(auditc_counts, aes(x = audit_c, y = n, fill = sev)) +
-  labs(x = "mAUDIT-C: Hazardous Alcohol Use", x = NULL, y = NULL) +
+  labs(x = "mAUDIT-C: Hazardous Alcohol Use", x = NULL, y = NULL, tag = "A") +
   geom_col(alpha = 0.85, width = 0.9) +
   scale_fill_manual(values = c("Low" = "#33A65CFF", "Moderate" = "#F8B620FF", "High" = "#1BA3C6FF", "Severe" = "violetred3"))+
   scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12))+
   facet_grid(. ~ sev, space = "free", scales = "free_x", switch = "x") +
-  theme_classic() +
+  theme_classic(base_size = 6) +
   theme(legend.position = "none",
+        axis.line.y = element_line(linewidth = 0.15, color = "black"),
+        axis.line.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        text = element_text(family = "Arial"),
-        axis.title.x= element_text(size = 12, family = "Arial"),
-        axis.text.x = element_text(size = 12, family = "Arial"),
-        plot.title = element_text(size = 17),
+        axis.title.x= element_text(size = 7),
         strip.placement = "inside",
-        strip.text = element_text(family = "Arial", color = "black", size = 11, hjust = 0.5),
-        panel.spacing =  unit(-0.1, "lines"),
-        plot.tag = element_text(size = 30, family = "Arial", face = "bold", hjust = -1, vjust = 1.5))+
-  geom_text(aes(label = n, y = n + 3, family = "Arial"), size = 4,
+        strip.text = element_text(hjust = 0.5),
+        strip.background = element_rect(linewidth = 0.25, color = "black"),
+        panel.spacing =  unit(0, "lines"),
+        plot.tag = element_text(size = 10, face = "bold", hjust = -1, vjust = 1.5))+
+  geom_text(aes(label = n, y = n + 3), size = 1.75,
             position = position_dodge(0.5), vjust = 0)+
   scale_y_continuous(expand = expansion(mult = 0, add = 1))+
   expand_limits(y = c(0, 155))
 
 p11
 
-p8 <- p8 + ggtitle("Times Used Tobacco") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
-p9 <- p9 + ggtitle("Times Used Illicit Drugs") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
-p10 <- p10 + ggtitle("Times Used Marijuana") + labs (x = NULL) + theme(plot.title = element_text(size = 27))
-p11 <- p11 + labs (tag = "A") + theme(plot.tag = element_text(size = 20))
-
-p11
-
-pb <- (free(p10) + free(p8) + free(p9) + 
-         plot_layout(ncol = 1, axes = "keep") +
+pb <- (p10 + p8 + p9 + 
+         plot_layout(ncol = 1, axes = "keep", heights = c(1, 1, 1)) +
          plot_annotation(tag_levels = "A")) &
   theme(
-    plot.tag = element_text(size = 30, family = "Arial", color = "black", face = "bold"))
+    plot.tag = element_text(size = 10, color = "black", face = "bold"),
+    axis.line = element_line(linewidth = 0.25),
+    axis.ticks = element_line(linewidth = 0.25),
+    plot.margin = margin(0, 0, 0, 0))
 
 pb
 
-# ggsave("pb.jpeg", pb, dpi = 500, unit = "mm")
+# ggsave("Daniella/images/eFigure3.png", pb, dpi = 600, units = "mm", width = 90, height = 100)
+# ggsave("Daniella/images/eFigure3.jpeg", pb, dpi = 600, units = "mm", width = 90, height = 100)
+# ggsave("Daniella/images/eFigure3.pdf", pb, units = "mm", width = 90, height = 100)
 
 ############### upset plots- poly use  ##########
 
@@ -204,23 +198,24 @@ intersection <- upset(
   intersect = c("Illicit Drugs", "Tobacco", "Alcohol", "Marijuana"),
   sort_intersections_by = "degree",
   sort_intersections = "ascending",
-  stripes = "grey95",
+  stripes = upset_stripes(colors = "grey95", geom=geom_segment(size=3)),
   height_ratio = 0.35,
   themes=upset_modify_themes(
     list('intersections_matrix'=theme(
-      axis.text.y=element_text(color = "black", family = "Arial", size = 12),
-      axis.title.x=element_text(color = "black", family = "Arial", size = 12),
-      panel.grid = element_blank()))),
+      axis.text.y=element_text(color = "black", size = 6),
+      axis.title.x=element_text(color = "black", size = 7),
+      panel.grid = element_blank(),
+      'Intersection size' =theme(axis.text.y=element_text(size = 7))))),
   base_annotations = list(
     "Intersection size" = intersection_size(
       counts = TRUE,
       width = 0.7,
       bar_number_threshold = 1,
-      text = list(vjust = -0.5, size = 4, family = "Arial")) +
+      text = list(vjust = -0.5, size = 1.75)) +
       coord_cartesian(ylim = c(0, 350)) + 
       theme_void() +
       theme(
-        axis.title.y = element_text(vjust = -15, size = 12, family = "Arial"),
+        axis.title.y = element_text(vjust = -20, size = 7),
         axis.line = element_line(color = "white")) +
       ylab("Number of Users by Pattern")
   ),
@@ -228,19 +223,17 @@ intersection <- upset(
     upset_set_size() +
       expand_limits(y=1300)+
       geom_bar (fill = "grey75", width = 0.6) +
-      geom_text(aes(label=..count..), hjust=1.2, stat='count', size = 4, family = "Arial") +
+      geom_text(aes(label=..count..), hjust=1.2, stat='count', size = 1.75) +
       theme(
-        strip.background = element_rect(fill = "white"),
         panel.grid = element_blank(),
         axis.text = element_blank(),
-        axis.text.x = element_blank(),
-        axis.title.y = element_text(vjust = -17, size = 12, family = "Arial", color = "black"))+
-      ylab("Number of Lifetime \n Users by Drug")
+        axis.title.x = element_text(size = 7, color = "black"))+
+      ylab("Number of Users by Drug")
   ),
   matrix = intersection_matrix(
-    geom = geom_point(shape = 19, size = 3),
+    geom = geom_point(shape = 19, size = 2),
     segment = geom_segment(
-      linetype = "solid", linewidth = 1),
+      linetype = "solid", linewidth = 0.75),
     outline_color = list(
       active = NA,     
       inactive = NA)
@@ -306,10 +299,9 @@ intersection <- upset(
     ######
   ))+
   theme(
-    plot.margin = unit(c(0, 0, 0, 0), "mm"),
-    plot.tag = element_text(size = 20, family = "Arial", face = "bold", hjust = -1, vjust = 1.5),
-    plot.tag.position = c(0,1)
-  )+
+    panel.spacing = unit(80, "mm"),
+    plot.tag = element_text(size = 10, face = "bold", hjust = -1, vjust = 1.5),
+    plot.tag.position = c(0,1))+
   labs(tag = "B")
 
 intersection
@@ -319,7 +311,9 @@ ppoly <- (free(p11) + free(intersection) +
 
 ppoly
 
-# ggsave("ppoly.jpeg", ppoly, dpi = 500, units = "mm")
+ggsave("Daniella/images/Figure1.png", ppoly, dpi = 600, units = "mm", width = 180, height = 70)
+ggsave("Daniella/images/Figure1.pdf", ppoly, units = "mm", width = 180, height = 70)
+ggsave("Daniella/images/Figure1.jpeg", ppoly, dpi = 500, units = "mm", width = 180, height = 70)
 
 #### mean thck ~ audit residual scatter ###############
 
@@ -408,23 +402,28 @@ scatter <- ggplot(base_dat, aes(x = audit_c, y = residuals)) +
   geom_pointdensity(size = 3)+
   geom_smooth(data = dat, color = "deeppink4", method = "lm", se = FALSE)+
   scale_color_viridis(option = "G", direction = -1)+
-  theme_classic()+
+  theme_classic(base_size = 7)+
   labs(x = "Hazardous Alcohol Use", y = "Standardized Adjusted Global Thickness")+
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12))+
+  scale_x_continuous(breaks = seq(0, 12, by = 2))+
+  scale_y_continuous(breaks = seq(-2, 2, by = 1), limits = c(-2, 2))+
   theme(
     legend.position = "none",
-    text = element_text(family = "Arial"))
+    axis.text = element_text(size =6))
 
 scatter
+
+ggsave("Daniella/images/Figure2.png", scatter, dpi = 500, units = "mm", width = 90, height = 70)
+ggsave("Daniella/images/Figure2.pdf", scatter, units = "mm", width = 90, height = 70)
+ggsave("Daniella/images/Figure2.jpeg", scatter, dpi = 500, units = "mm", width = 90, height = 70)
 
 # ggsave("scatter.jpeg", scatter, dpi = 500, units = "cm")
 
 ##################### mean_Thck ~ SU Vars ###################
 
-plot2 <- read_xlsx("brainstr_su/results/primary/3_meanThck_shared.xlsx")%>%
+plot2 <- read_xlsx("Daniella/brainstr_su/results/primary/3_meanThck_shared.xlsx")%>%
   mutate(stroke = ifelse(pfdr < 0.05, 1, 0.5),
          alpha = ifelse(pfdr < 0.05, 1, 0.5),
-         size = ifelse(pfdr < 0.05, 1.5, 1),
+         size = ifelse(pfdr < 0.05, 0.75, 0.5),
          sig = ifelse(pfdr < 0.05, "yes", "no"))
 
 plot2$xvar <- plot2$xvar %>%
@@ -447,28 +446,26 @@ plot2$xvar <- plot2$xvar %>%
 p2 <- ggplot(plot2, aes(x = Estimate, y = xvar)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
   geom_point(aes(alpha = alpha, stroke = 1), fill = "#5ebba0", color = "#5ebba0",
-             size = 3, shape = 21, show.legend = FALSE) +
+             size = 1.5, shape = 21, show.legend = FALSE) +
   geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), height = 0, color = "#5ebba0", 
                  alpha = plot2$alpha, size = plot2$size, show.legend = FALSE)+
-  theme_classic()+
+  theme_classic(base_size = 7)+
   labs(x = "Standardized Regression Estimate (95% CI) \nAssociation With Global Brain Thickness", y = "")+
   theme(
-    text = element_text(family = "Arial"),
-    axis.text.y = element_text(color = "black", size = 14),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(color = "black", size = 14))+
-  # ggtitle("Substance Use is Associated \nwith Attenuated Brain Thickness")+
+    axis.text.x = element_text(color = "black", size = 6))+
   geom_point(data = subset(plot2, xvar %in% c("mAUDIT-C", 
                                                  "Marijuana Use")),
              aes(x = `2.5 %` - 0.01, y = xvar),  
-             shape = 8, size = 2.5, color = "black")
+             shape = 8, size = 1, color = "black")
 p2
 
- # ggsave("p2.jpeg", p2, dpi = 500, units = "mm")
+# ggsave("Daniella/images/Figuret3.png", p2, dpi = 500, units = "mm", width = 90, height = 60)
+# ggsave("Daniella/images/Figure3.pdf", p2, units = "mm", width = 90, height = 60)
+# ggsave("Daniella/images/Figure3.jpeg", p2, dpi = 500, units = "mm", width = 90, height = 60)
 
 ############## mean_thck ~ wtn/btwn fam SU #########################
 
-plot3 <- read_xlsx("brainstr_su/results/primary/5_meanThck_wtnbtwn.xlsx")%>%
+plot3 <- read_xlsx("Daniella/brainstr_su/results/primary/5_meanThck_wtnbtwn.xlsx")%>%
   mutate(
     drug = case_when(
       str_detect(x.var, regex("audit", ignore_case = TRUE)) ~ "mAUDIT-C",
@@ -490,7 +487,7 @@ plot3 <- read_xlsx("brainstr_su/results/primary/5_meanThck_wtnbtwn.xlsx")%>%
      drug = factor(drug, levels = c("mAUDIT-C", "Marijuana Use")),
      stroke = ifelse(pfdr < 0.05, 1, 0.5),
      alpha = ifelse(pfdr < 0.05, 1, 0.5),
-     size = ifelse(pfdr < 0.05, 1.5, 1),
+     size = ifelse(pfdr < 0.05, 0.75, 0.5),
      sig = ifelse(pfdr < 0.05, "yes", "no"))
 
 p3 <- ggplot(plot3, aes(x = Estimate, y = order, group = drug_group_sample)) +
@@ -499,7 +496,7 @@ p3 <- ggplot(plot3, aes(x = Estimate, y = order, group = drug_group_sample)) +
   geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`, color = order), 
                  height = 0, size = plot3$size, alpha = plot3$alpha) +
   geom_point(aes(stroke = stroke, fill = order, color = order),
-             size = 3, shape = 21, alpha = plot3$alpha) +
+             size = 1.5, shape = 21, alpha = plot3$alpha) +
   scale_color_manual(name = "", values = setNames(plot3$my_color, plot3$order),
                      labels = c("MZ == 1" = "Monozygotic Twins", "MZ == 1 | DZ == 1" = "Monozygotic & Dizygotic Twins", 
                                 "Half != 1" = "Full Siblings", "whole" = "Entire Sample")) +
@@ -513,27 +510,21 @@ p3 <- ggplot(plot3, aes(x = Estimate, y = order, group = drug_group_sample)) +
                "Within-Family" = "Within-Family",
                "Between-Family" = "Between-Family"
              )))+
-  theme_classic() +
+  theme_classic(base_size = 7) +
   guides(color = guide_legend(ncol = 4, reverse = TRUE),
          fill  = guide_legend(reverse = TRUE))+
   xlab("Standardized Regression Estimate (95% CI) Association With Brain Thickness")+
   theme(
-    text = element_text(family = "Arial"),
     axis.line.y = element_line(color = "grey80"),
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(color = "black", size = 14),
+    axis.text.x = element_text(size = 6),
     strip.placement = "left",
     strip.background = element_rect(colour = "white", fill = "white"),
-    strip.text.x = element_text(color = "black", size = 14),
-    strip.text.y = element_text(color = "black", size = 14),
     strip.text.y.left = element_text(angle = 0, hjust = 1),
     legend.position = "top",
-    legend.justification = "left",
-    legend.text = element_text(size = 12),
-    # legend.key.spacing = unit(0, "cm"),
+    legend.justification = "center",
     legend.margin = margin(0, 0, 0, 0, unit = "cm"))+
   xlim(-0.3, 0.3)
 
@@ -541,11 +532,11 @@ p3
 
 ################### SU vars ~ wtn/btwn mean_Thck ##############
 
-plot4 <- read_xlsx("brainstr_su/results/primary/6_substanceUse_wtnbtwnThck.xlsx")%>%
+plot4 <- read_xlsx("Daniella/brainstr_su/results/primary/6_substanceUse_wtnbtwnThck.xlsx")%>%
   mutate(
     stroke = ifelse(pfdr < 0.05, 1, 0.5),
     alpha = ifelse(pfdr < 0.05, 1, 0.5),
-    size = ifelse(pfdr < 0.05, 1.5, 1),
+    size = ifelse(pfdr < 0.05, 0.75, 0.5),
     sig = ifelse(pfdr < 0.05, "yes", "no"),
     y.var = case_when(
       y.var == "thc_user" ~ "Marijuana Use",
@@ -570,8 +561,7 @@ p4 <- ggplot(plot4, aes(x = Estimate, y = order, group = drug_group_sample)) +
   geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`, color = order), 
                  height = 0, size = plot4$size, alpha = plot4$alpha) +
   geom_point(aes(stroke = stroke, fill = order, color = order),
-             size = 3, shape = 21, alpha = plot4$alpha) +
-  # guides(fill = "none") +
+             size = 1.5, shape = 21, alpha = plot4$alpha) +
   scale_color_manual(name = "", values = setNames(plot4$my_color, plot4$order),
                      labels = c("MZ == 1" = "Monozygotic Twins", "MZ == 1 | DZ == 1" = "Monozygotic & Dizygotic Twins", 
                                 "Half != 1" = "Full Siblings", "whole" = "Entire Sample")) +
@@ -586,36 +576,31 @@ p4 <- ggplot(plot4, aes(x = Estimate, y = order, group = drug_group_sample)) +
                "Within-Family" = "Within-Family Brain Thickness",
                "Between-Family" = "Between-Family Brain Thickness"
              )))+
-  theme_classic() +
+  theme_classic(base_size = 7) +
   guides(color = guide_legend(ncol = 4, reverse = TRUE),
          fill  = guide_legend(reverse = TRUE))+
   xlab("Standardized Regression Estimate (95% CI) Association With Substance Use")+
   theme(
-    text = element_text(family = "Arial"),
     axis.line.y = element_line(color = "grey80"),
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(color = "black", size = 14),
+    axis.text.x = element_text(color = "black", size = 6),
     strip.placement = "left",
     strip.background = element_rect(colour = "white", fill = "white"),
-    strip.text.x = element_text(color = "black", size = 14),
-    strip.text.y = element_text(color = "black", size = 14),
     strip.text.y.left = element_text(angle = 0, hjust = 1),
     legend.position = "top",
-    legend.justification = "left",
-    legend.text = element_text(size = 12),
-    # legend.key.spacing = unit(0, "cm"),
+    legend.justification = "center",
     legend.margin = margin(0, 0, 0, 0, unit = "cm"))+
   xlim(-0.3, 0.3)
 
 p4
+
 ############# SOLAR-Eclipse Heritability & variance component corr###########
 
 #heritability
 
-peher1 <- read_xlsx("brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
+peher1 <- read_xlsx("Daniella/brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
   filter(!x.var == "onset_alc")%>%
   dplyr::select(x.var, xh2r_Estimate, xh2r_SE, xh2r_pval, xe2_Estimate, xe2_SE)%>%
   rename(x.var = x.var, 
@@ -625,7 +610,7 @@ peher1 <- read_xlsx("brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
          eestimate = xe2_Estimate,
          ese = xe2_SE)
 
-peher2 <- read_xlsx("brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
+peher2 <- read_xlsx("Daniella/brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
   dplyr::select(y.var, yh2r_Estimate, yh2r_SE, yh2r_pval, ye2_Estimate, ye2_SE)
 
 colnames(peher2) = colnames(peher1)  
@@ -638,9 +623,9 @@ plot5 <- rbind(peher1, peher2)%>%
   mutate(type = case_when(
     prefix == "" ~ "Heritability",
     prefix == "e" ~ "Environmental Variance"),
-    stroke = ifelse(pval<0.05, 2, 1.5),
+    stroke = ifelse(pval<0.05, 1, 0.5),
     alpha = ifelse(pval<0.05, 1, 0.5),
-    size = ifelse(pval<0.05, 1.5, 1),
+    size = ifelse(pval<0.05, .75, 0.25),
     x.var = case_when(
       x.var == "mean_Thck" ~ "Brain Thickness",
       x.var =="audit_c" ~ "mAUDIT-C",
@@ -656,7 +641,7 @@ dodge <- position_dodge(width = 0.5)
 
 p5 <- ggplot(plot5, aes(y = x.var, x = estimate, fill = type, color = type)) +
   geom_hline(yintercept = c(1.5, 2.5), color = "grey80", linewidth = 0.5, linetype = "solid") +
-  geom_point(size = plot5$size, shape = 21, position = dodge, stroke = plot5$stroke) +
+  geom_point(size = 1.5, shape = 21, position = dodge, stroke = plot5$stroke) +
   geom_errorbarh(aes(xmin = ci_lower_std, xmax = ci_upper_std),
                  size = plot5$size,  height = 0, position = dodge) +
   scale_fill_manual(
@@ -664,26 +649,21 @@ p5 <- ggplot(plot5, aes(y = x.var, x = estimate, fill = type, color = type)) +
   scale_color_manual(
     values = c("Heritability" = "#c1447e", "Environmental Variance" = "#8bac54")) +
   labs(x = "Standardized Estimate (95% CI)", y = "", fill = "", color = "") +
-  theme_classic() +
-  scale_x_continuous(limits = c(0, 1), expand = c(0, 0))+
+  theme_classic(base_size = 7) +
+  scale_x_continuous(breaks = seq(0, 1, by = 0.25), limits = c(0, 1))+
   theme(
-    text = element_text(family = "Arial", color = "black"),
-    axis.text.y = element_text(color = "black", size = 14),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(color = "black", size = 14),
+    axis.text.x = element_text(color = "black", size = 6),
     axis.ticks.y = element_blank(),
     legend.position = "top",
     legend.justification = "left",
-    legend.text = element_text(size = 12),
-    legend.key.spacing = unit(0, "cm"),
     legend.margin = margin(0, 0, 0, 0, unit = "cm"))+
-  guides(fill = guide_legend(ncol = 1), color = guide_legend(ncol = 1))
+  guides(fill = guide_legend(ncol = 2), color = guide_legend(ncol = 2))
 
 p5
 
 # variance component correlation
 
-plot6 <- read_xlsx("brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
+plot6 <- read_xlsx("Daniella/brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
   mutate(x.var = case_when(
     x.var =="audit_c" ~ "mAUDIT-C",
     x.var =="thc_user" ~ "MJ Use",))%>%
@@ -696,9 +676,9 @@ plot6 <- read_xlsx("brainstr_su/results/primary/7_solar_analyses.xlsx")%>%
     rhog_pvalZ < 0.05 & type == "rhog" ~ "y",
     rhoe_pvalZ < 0.05 & type == "rhoe" ~ "y",
     TRUE ~ "n"),
-    stroke = ifelse(sig == "y", 2, 1.5),
+    stroke = ifelse(sig == "y", 1, 0.5),
     alpha = ifelse(sig == "y", 1, 0.5),
-    size = ifelse(sig == "y", 1.5, 1),
+    size = ifelse(sig == "y", .75, 0.5),
     type = case_when(
       type == "rhog" ~ "Additive Genetics",
       type == "rhoe" ~ "Non-Shared Environment"),
@@ -712,7 +692,7 @@ p6 <- ggplot(plot6, aes(y = x.var, x = Estimate, fill = type, color = type)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
   geom_hline(yintercept = 1.5, color = "grey80", linewidth = 0.5, linetype = "solid") +
   geom_point(stroke = plot6$stroke, alpha = plot6$alpha,
-             size = plot6$size, shape = 21, position = dodge) +
+             size = 1.5, shape = 21, position = dodge) +
   geom_errorbarh(aes(xmin = ci_lower_std, xmax = ci_upper_std),
                  size = plot6$size, alpha = plot6$alpha, height = 0, position = dodge) +
   scale_fill_manual(
@@ -724,19 +704,14 @@ p6 <- ggplot(plot6, aes(y = x.var, x = Estimate, fill = type, color = type)) +
     values = c("Additive Genetics" = "#1f77b4", "Non-Shared Environment" = "#EF2929FF"),
     guide = guide_legend(reverse = TRUE)) +
   labs(x = "Variance Component Correlation (95% CI)", y = "", fill = "", color = "") +
-  theme_classic() +
+  theme_classic(base_size = 7) +
   theme(
-    text = element_text(family = "Arial", color = "black"),
-    axis.text.y = element_text(color = "black", size = 14),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(color = "black", size = 14),
+    axis.text = element_text(color = "black", size = 6),
     axis.ticks.y = element_blank(),
     legend.position = "top",
     legend.justification = "left",
-    legend.text = element_text(size = 12),
-    legend.key.spacing = unit(0, "cm"),
     legend.margin = margin(0, 0, 0, 0, unit = "cm"))+
-  guides(fill = guide_legend(ncol = 1), color = guide_legend(ncol = 1))
+  guides(fill = guide_legend(ncol = 2), color = guide_legend(ncol = 2))
 
 p5
 p6
@@ -745,22 +720,24 @@ p6
 
 p7 <- (p3) / (p4) / (p5 | p6)+
   plot_annotation(tag_levels = 'A')&
-  theme(plot.tag = element_text(size = 20, face = "bold"))
+  theme(plot.tag = element_text(size = 10, face = "bold"))
 
 p7
 
- # ggsave("p7.jpeg", p7, dpi = 500, units = "cm")
+ggsave("Daniella/images/Figure4.png", p7, dpi = 500, units = "mm", width = 180, height = 170)
+ggsave("Daniella/images/Figure4.pdf", p7, units = "mm", width = 180, height = 170)
+ggsave("Daniella/images/Figure4.jpeg", p7, dpi = 500, units = "mm", width = 180, height = 170)
 
 ########## SUPPLEMENTARY MATERIALS PLOTS #############
 
 #### region ~ maudit-c #########################################
 
-noctrl <- read_xlsx("brainstr_su/results/primary/1_region_audit_noThckCtrl.xlsx")%>%
+noctrl <- read_xlsx("Daniella/brainstr_su/results/primary/1_region_audit_noThckCtrl.xlsx")%>%
   filter(!y.var == "FS_BrainSeg_Vol_No_Vent")%>%
   mutate(Dataset = "Before Thickness Covariate",
          fdr = if_else(pfdr < 0.05, 1, 0 ))
 
-ctrl <- read_xlsx("brainstr_su/results/primary/2_region_audit_ThckCtrl.xlsx")%>%
+ctrl <- read_xlsx("Daniella/brainstr_su/results/primary/2_region_audit_ThckCtrl.xlsx")%>%
   filter(!y.var == "FS_BrainSeg_Vol_No_Vent")%>%
   mutate(Dataset = "After Thickness Covariate",
          fdr = 0)
@@ -796,9 +773,9 @@ plot1 <- plot1%>%
     y_pos = ifelse(Dataset == "After Thickness Covariate",
                    y_numeric + .7,
                    y_numeric - .7),
-    stroke = ifelse(fdr ==1, 2, 1.5),
+    stroke = ifelse(fdr ==1, 1, 0.5),
     alpha = ifelse(fdr ==1, 1, 0.5),
-    size = ifelse(fdr ==1, 2, 1.5),
+    size = ifelse(fdr ==1, .75, .5),
     color = case_when(
       y.var == "Brain Thickness" ~ "grey40",
       Dataset == "After Thickness Covariate" ~ "violetred3",
@@ -807,39 +784,38 @@ plot1 <- plot1%>%
   group_by(type) %>%
   arrange(y.var) %>%
   mutate(y_numeric = row_number()) %>%
-  ungroup()
+  ungroup()%>%
+  mutate(size = ifelse(y.var == "Brain Thickness", 0.75, size),
+         alpha = ifelse(y.var == "Brain Thickness", 1, alpha))
 
 plot1[47,17:19] = plot1[48,17:19]
 
 p1 <- ggplot(plot1, aes(x = Estimate, y = y.var, color = color, fill = color)) + 
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
-  geom_point(size = 3, shape = 21, alpha = plot1$alpha, fill = plot1$color,
+  geom_point(size = 1.5, shape = 21, alpha = plot1$alpha, fill = plot1$color,
              stroke = plot1$stroke, color = plot1$color) +
   geom_errorbarh(aes(xmin = ci_lower, xmax = ci_upper), height = 0, alpha = plot1$alpha, 
                  size = plot1$size, color = plot1$color)+
-  theme_classic()+
+  theme_classic(base_size = 7)+
   facet_grid(type ~ Dataset,
              labeller = "label_value",
-             scales = "free_y", switch = "y")+
+             scales = "free_y", space = "free_y", switch = "y")+
+  scale_x_continuous(breaks = seq(-0.1, 0.1, by = 0.1), limits = c(-0.2, 0.09))+
   theme(
-    text = element_text(family = "Arial"),
     strip.placement = "left",
-    strip.text = element_text(size =25),
     panel.spacing = unit(0, "lines"),
     strip.background = element_rect(colour = "white", fill = "grey90"),
-    axis.text.x = element_text(color = "black", size = 25),
-    axis.title.x = element_text(color = "black", size = 30),
-    axis.text.y = element_text(color = "black", size = 30),
+    axis.text.x = element_text(color = "black", size = 6),
     legend.position = "none",
-    plot.title = element_text(size = 35, face = "bold")
   )+
-  labs(x = "Standardized Regression Estimate (95% CI) \n Association With mAUDIT-C", 
-       y = "", color = NULL, fill = NULL, color = "black", size = 35)+
-  force_panelsizes(rows = unit(c(1.5,8.4,3.1), "in"), TRUE)
+  labs(x = "Standardized Regression Estimate (95% CI) Association With mAUDIT-C", 
+       y = "", color = NULL, fill = NULL, color = "black")
 
 p1
 
- # ggsave("p1.jpeg", p1, dpi = 500, units = "mm")
+# ggsave("Daniella/images/eFigure4.png", p1, dpi = 500, units = "mm", width = 180, height = 100)
+# ggsave("Daniella/images/eFigure4.pdf", p1, units = "mm", width = 180, height = 100)
+# ggsave("Daniella/images/eFigure4.jpeg", p1, dpi = 500, units = "mm", width = 180, height = 100)
 
 ######## sample characteristics ###############
 
@@ -855,18 +831,17 @@ gend <- data.frame(
 pgend <- ggplot(gend, aes(x = Gender, y = value, fill = Gender)) +
   geom_col()+
   scale_fill_manual(values = c("violetred3", "#1f77b4")) +
-  theme_classic() + 
-  labs (tag = "A")+
+  theme_classic(base_size = 6) + 
+  labs (tag = "A", title = "Sex")+
   theme(
     legend.position = "none", 
-    text = element_text(family = "Arial", color = "black"),
-    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
+    plot.tag = element_text(face = "bold", size = 10),
     axis.title.y = element_blank(),
-    axis.text.y = element_text(color = "black", size = 21),
-    axis.text.x = element_text(color = "black", size = 21),
-    axis.title.x = element_blank(),                           
-    plot.title = element_text(size = 27, hjust = 0)) +
-  ggtitle("Sex")
+    axis.title.x = element_blank(),
+    axis.text = element_text(color = "black"),
+    plot.title = element_text(size = 7)
+    )    
+  
 pgend
 
 #Age 
@@ -880,17 +855,15 @@ page <- ggplot(age, aes(x = Age, y = value, fill = Age)) +
   scale_fill_manual(values = colorRampPalette(c("#fae587","#e27950"))(nrow(age))) +
   scale_x_discrete(breaks = levels(age$Age)[seq(1, length(levels(age$Age)), by = 2)]) +
   scale_y_continuous(breaks = seq(0, max(age$value), by = 25)) +
-  theme_classic() +       
-  labs(tag = "C")+
+  theme_classic(base_size = 6) +       
+  labs(tag = "C", title = "Age")+
   theme(
     legend.position = "none", 
-    text = element_text(family = "Arial", color = "black"),
     axis.title.y = element_blank(),
-    axis.text.y = element_text(color = "black", size = 21),
-    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
-    axis.text.x = element_text(color = "black", size = 21),
+    axis.text = element_text(color = "black"),
+    plot.tag = element_text(face = "bold", size = 10),
     axis.title.x = element_blank(),                           
-    plot.title = element_text(size = 27, hjust = 0)) +
+    plot.title = element_text(size = 7)) +
   ggtitle("Age")
 
 page
@@ -912,18 +885,16 @@ income <- data.frame(table(samp$SSAGA_Income))%>%
 pinc <- ggplot(income, aes(x = Income, y = value, fill = Income)) +
   geom_col()+
   scale_fill_manual(values = colorRampPalette(c("#d0ccf4","#3f72bf"))(nrow(income)))+
-  theme_classic() + 
-  labs(tag = "D")+
+  theme_classic(base_size = 6) + 
+  labs(tag = "D", title = "Yearly Income")+
   theme(
     legend.position = "none", 
-    text = element_text(family = "Arial", color = "black"),
+    text = element_text(color = "black"),
     axis.title.y = element_blank(),
-    axis.text.y = element_text(color = "black", size = 21),
-    axis.text.x = element_text(color = "black", size = 18, angle = 45, hjust = 1),
-    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
+    axis.text.x = element_text(color = "black", angle = 45, hjust = 1),
+    plot.tag = element_text(face = "bold", size = 10),
     axis.title.x = element_blank(),                           
-    plot.title = element_text(size = 27, hjust = 0)) +
-  ggtitle("Yearly Income")
+    plot.title = element_text(size = 7, hjust = 0))
 
 pinc
 
@@ -951,22 +922,20 @@ race <- data.frame(table(samp$Race)) %>%
 
 prace <- ggplot(race, aes(x = Race, y = value, fill = Race)) +
   geom_col()+
-  scale_fill_manual(values = c("#fae587", "#5ebba0", "#9f9cca", "#e48f4e", "violetred3", "#1f77b4"))+
+  scale_fill_manual(values = c("#F8B620FF", "#7fb800",  "#1f77b4", "#F28E2BFF", "violetred3",  "#9f9cca"))+
   ylim(0, 900)+
-  geom_text(aes(label = value, y = value + 10, family = "Arial", size = 18),
+  theme_classic(base_size = 6) + 
+  geom_text(aes(label = value, y = value + 10), size = 1.75,
             position = position_dodge(0.9), vjust = 0) +
-  theme_classic() + 
-  labs(tag = "E", y = "blank")+
+  labs(tag = "E", y = "", x = "")+
   theme(
     legend.position = "none", 
-    text = element_text(family = "Arial", color = "black"),
-    axis.title.y = element_text(color ="white"),
+    text = element_text(color = "black"),
     axis.ticks.y = element_blank(),
-    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
-    axis.text.y = element_text(size = 10, color = "white"),
-    axis.text.x = element_text(color = "black", size = 20, angle = 45, hjust = 1),
-    axis.title.x = element_blank(),                           
-    plot.title = element_text(size = 27, hjust = 0)) +
+    plot.tag = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(color = "black", angle = 45, hjust = 1),
+    axis.text.y = element_blank(),
+    plot.title = element_text(size = 7, hjust = 0)) +
   ggtitle("Racial Identity")
 
 prace
@@ -983,18 +952,12 @@ educ <- data.frame(table(samp$SSAGA_Educ))%>%
 pedu <- ggplot(educ, aes(x = `Years Completed`, y = value, fill = `Years Completed`)) +
   geom_col()+
   scale_fill_manual(values = colorRampPalette(c("#ffc6c4", "#ad466c"))(nrow(educ)))+
-  theme_classic() +
-  labs(tag="B")+
+  theme_classic(base_size = 6) +
+  labs(tag="B", x = "", y = "", title = "Education (Years Completed)")+
   theme(
     legend.position = "none", 
-    text = element_text(family = "Arial", color = "black"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_text(color = "black", size = 18),
-    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
-    axis.text.x = element_text(color = "black", size = 20),
-    axis.title.x = element_blank(),                           
-    plot.title = element_text(size = 27, hjust = 0)) +
-  ggtitle("Education (Years Completed)")
+    plot.tag = element_text(face = "bold", size = 10),            
+    plot.title = element_text(size = 7)) 
 
 pedu
 
@@ -1011,22 +974,19 @@ sibstat$sibling_status <- factor(
 
 psib <- ggplot(sibstat, aes(x = `sibling_status`, y = value, fill = `sibling_status`)) +
   geom_col()+
-  scale_fill_manual(values = c("#1f77b4", "#5ebba0", "#9f9cca", "violetred3", "#e48f4e"))+
-  theme_classic() +       
-  geom_text(aes(label = value, y = value + 10, family = "Arial", size = 18),
+  scale_fill_manual(values = c("#9f9cca", "#7fb800", "#1f77b4", "violetred3", "#e48f4e"))+
+  theme_classic(base_size = 6) +       
+  geom_text(aes(label = value, y = value + 10), size = 1.75,
             position = position_dodge(0.9), vjust = 0) +
-  labs(tag="F", y = "blank")+
+  labs(tag="F", y = "", title = "Sibling Status", x = "")+
   theme(
     legend.position = "none", 
-    text = element_text(family = "Arial", color = "black"),
-    plot.tag = element_text(family = "Arial", face = "bold", size = 40),
-    axis.text.y = element_text(size = 10, color = "white"),
-    axis.title.y = element_text(size = 10, color = "white"),
+    plot.tag = element_text(face = "bold", size = 10),
+    axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.text.x = element_text(color = "black", size = 20, angle = 45, hjust = 1),
-    axis.title.x = element_blank(),                           
-    plot.title = element_text(size = 27, hjust = 0)) +
-  ggtitle("Sibling Status")
+    axis.text.x = element_text(color = "black", angle = 45, hjust = 1),                  
+    plot.title = element_text(size = 7))
+
 psib
 
 pa <- (pedu | page | pinc) / (pgend | prace | psib)+
@@ -1042,16 +1002,18 @@ pa <- pa1 / pa2
 
 pa
 
- # ggsave("pa.jpeg", pa, dpi = 500, unit = "mm")
+ggsave("Daniella/images/eFigure1.png", pa, dpi = 500, units = "mm", width = 180, height = 100)
+ggsave("Daniella/images/eFigure1.pdf", pa, units = "mm", width = 180, height = 100)
+ggsave("Daniella/images/eFigure1.jpeg", pa, dpi = 500, units = "mm", width = 180, height = 100)
 
 
 ######### mean_thck ~ primary + 2ndary SU vars #########
 
-plot8 <- read_xlsx("brainstr_su/results/post-hoc/1_meanThck_secondaryDrugVars.xlsx")%>%
+plot8 <- read_xlsx("Daniella/brainstr_su/results/post-hoc/1_meanThck_secondaryDrugVars.xlsx")%>%
   rename(co.var = covar)%>%
   mutate(stroke = ifelse(pfdr < 0.05, 1, 0.5),
          alpha = ifelse(pfdr < 0.05, 1, 0.5),
-         size = ifelse(pfdr < 0.05, 1.5, 1),
+         size = ifelse(pfdr < 0.05, .75, .5),
          sig = ifelse(pfdr < 0.05, "yes", "no"))
 
 plot8$xvar <- plot8$xvar %>%
@@ -1063,7 +1025,7 @@ plot8$xvar <- plot8$xvar %>%
     "Oxycontin"          = "Oxycontin Drug Test",
     "Opiates"          = "Opiates Drug Test",
     "Amphetamines"    = "Amphetamines Drug Test",
-    "MethAmphetamine"         = "MethAmphetamine Drug Test",
+    "MethAmphetamine"         = "Methamphetamine Drug Test",
     "Cocaine"        = "Cocaine Drug Test") %>%
   forcats::fct_rev()
 
@@ -1073,27 +1035,26 @@ p8 <- ggplot(plot8, aes(x = Estimate, y = xvar)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80") +
   geom_hline(yintercept = 9.5, linetype = "solid", color = "black")+
   geom_point(aes(alpha = alpha, stroke = 1), fill = "#5ebba0", color = "#5ebba0",
-             size = 3, shape = 21, show.legend = FALSE) +
+             size = 1.5, shape = 21, show.legend = FALSE) +
   geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), height = 0, color = "#5ebba0", 
                  alpha = plot8$alpha, size = plot8$size, show.legend = FALSE)+
-  theme_classic()+
+  theme_classic(base_size = 7)+
   labs(x = "Standardized Regression Estimate (95% CI) \nAssociation With Global Brain Thickness", y = "")+
   theme(
-    text = element_text(family = "Arial"),
-    axis.text.y = element_text(color = "black", size = 14),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(color = "black", size = 14))+
+    axis.text.x = element_text(color = "black", size = 6))+
   geom_point(data = subset(plot8, xvar %in% c("mAUDIT-C", 
                                               "Marijuana Use")),
              aes(x = `2.5 %` - 0.01, y = xvar),  
-             shape = 8, size = 2.5, color = "black")
+             shape = 8, size = 1, color = "black")
 p8
 
- # ggsave("p8.jpeg", p8, dpi = 500, units = "mm")
+ggsave("Daniella/images/eFigure6.png", p8, dpi = 500, units = "mm", width = 90, height = 90)
+ggsave("Daniella/images/eFigure6.pdf", p8, units = "mm", width = 90, height = 100)
+ggsave("Daniella/images/eFigure6.jpeg", p8, dpi = 500, units = "mm", width = 90, height = 100)
 
 ########### unique mean_thck ~ wtn/btwn SU #################
 
-plot9 <- read_xlsx("brainstr_su/results/primary/4a_meanThck_unique_drugCtrl.xlsx")%>%
+plot9 <- read_xlsx("Daniella/brainstr_su/results/primary/4a_meanThck_unique_drugCtrl.xlsx")%>%
   mutate(
     Sample = factor(sample,
                     levels = c("whole", "Half != 1"), 
@@ -1111,45 +1072,45 @@ plot9 <- read_xlsx("brainstr_su/results/primary/4a_meanThck_unique_drugCtrl.xlsx
 dodge <- position_dodge(width = 0.5)
 
 p9 <- ggplot(plot9, aes(y = y.axis, x = Estimate, color = Sample)) +
+  geom_hline(yintercept = 1.3, linetype = "solid", color = "grey80") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80")+
-  geom_point(aes(color = Sample, fill = Sample),  position = dodge, size = 1, shape = 21, stroke = 2) +
+  geom_point(aes(color = Sample, fill = Sample),  position = dodge, size = 1.5, shape = 21, stroke = 1) +
   geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), position = dodge, 
-                 height = 0, size = 1)+
+                 height = 0, size = 0.75)+
   scale_color_manual(
     values = c("Entire Sample" = "#1f77b4", "Full Siblings" = "violetred3"))+
   scale_fill_manual(
     values = c("Entire Sample" = "#1f77b4", "Full Siblings" = "violetred3"))+
   facet_grid(y.axis ~ Covariates, scales = "free_y", space = "free_y")+
-  theme_classic()+
+  theme_classic(base_size = 7)+
   theme(   
-    text = element_text(family = "Arial"),
-    axis.text.y = element_text(color = "black", size = 14),
-    axis.text.x = element_text(color = "black", size = 12),
-    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(color = "black", size = 6),
     legend.title = element_blank(),
     strip.text.y = element_blank(),
-    strip.text.x = element_text(size = 14),
+    panel.spacing = unit(1, "mm"),
     axis.title.y = element_blank(),
-    legend.text = element_text(size = 12),
     legend.justification = "left",
-    legend.position = "top")+
+    legend.position = "top", 
+    legend.margin = margin(0, 0, 0, 0, unit = "cm"))+
   scale_y_discrete(expand = c(0, 0))+
+  scale_x_continuous(breaks = c(-0.2, -0.1, 0), limits = c(-0.2, 0))+
   guides(color = guide_legend(ncol = 4))+
-  theme(panel.spacing = unit(0.1, "lines"))+
   xlab("Standardized Regression Estimate (95% CI) \n Association with Global Brain Thickness")
 
 p9
 
- # ggsave("p9.jpeg", p9, dpi = 500, units = "mm")
+ggsave("Daniella/images/eFigure8.png", p9, dpi = 500, units = "mm", width = 90, height = 60)
+ggsave("Daniella/images/eFigure8.pdf", p9, units = "mm", width = 90, height = 60)
+ggsave("Daniella/images/eFigure8.jpeg", p9, dpi = 500, units = "mm", width = 90, height = 60)
 
 ########## mediation test ###################################
 
-plot10 <- read_xlsx("brainstr_su/results/primary/8_potentialMediators_meanThck.xlsx")%>%
+plot10 <- read_xlsx("Daniella/brainstr_su/results/primary/8_potentialMediators_meanThck.xlsx")%>%
   filter(`Pr(>|t|)` < 0.05,
     !str_detect(as.character(x.var), "_T$|_AgeAdj"))%>%
   dplyr::select(y.var, x.var, Estimate, `Std. Error`, `Pr(>|t|)`, `2.5 %`, `97.5 %`)
 
-plot10.2 <- read_xlsx("brainstr_su/results/primary/9_potentialMediators_allVars.xlsx")%>%
+plot10.2 <- read_xlsx("Daniella/brainstr_su/results/primary/9_potentialMediators_allVars.xlsx")%>%
   filter(!str_detect(as.character(xvar), "_T$|_AgeAdj"))%>%
   dplyr::select(y.var, xvar, Estimate, `Std. Error`, `Pr(>|t|)`, `2.5 %`, `97.5 %`)
 
@@ -1193,21 +1154,18 @@ cols <- setNames(cols, lvl)
 
 p10 <- ggplot(plot10, aes(y = xvar, x = Estimate, color = xvar)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey80")+
-  geom_point(aes(fill = xvar), size = 2.5, shape = 21, alpha = plot10$alpha) +
-  geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), size = 1, height = 0, alpha = plot10$alpha)+
-  theme_classic()+
+  geom_point(aes(fill = xvar), size = 1.5, shape = 21, alpha = plot10$alpha) +
+  geom_errorbarh(aes(xmin = `2.5 %`, xmax = `97.5 %`), size = 0.75, height = 0, alpha = plot10$alpha)+
+  theme_classic(base_size = 7)+
   xlim(-0.4, 0.4)+
   facet_grid(. ~ y.var, scales = "free_y", switch = "y")+
   xlab("Standardized Regression Estimate (95% CI) Associations")+
   theme(
     legend.position = "none",
     strip.placement = "outside",
-    text = element_text(family = "Arial"),
-    axis.text.y = element_text(color = "black", size = 12),
     axis.title.y = element_blank(),
-    axis.title.x = element_text(size = 12),
-    axis.text.x = element_text(color = "black"),
-    strip.text.x = element_text(size =12),
+    axis.text = element_text(color = "black"),
+    strip.text.x = element_text(size =6),
     panel.border = element_rect(color = "grey80", fill= NA),
     strip.text = element_text(color = "black"),
     strip.background = element_rect(fill = "white", color = NA)) +
@@ -1216,12 +1174,13 @@ p10 <- ggplot(plot10, aes(y = xvar, x = Estimate, color = xvar)) +
 
 p10
 
-# ggsave("p.10.jpeg", p10, dpi = 500, units = "mm")
-
+ggsave("Daniella/images/eFigure7.png", p10, dpi = 500, units = "mm", width = 180, height = 90)
+ggsave("Daniella/images/eFigure7.pdf", p10, units = "mm", width = 180, height = 90)
+ggsave("Daniella/images/eFigure7.jpeg", p10, dpi = 500, units = "mm", width = 180, height = 90)
 
 ######### all brain~ all drugs (no mean_thck covar) ################
 
-plot11 <- read_xlsx("brainstr_su/results/post-hoc/2_allbrain_alldrugs_noCtrlThck.xlsx") %>%
+plot11 <- read_xlsx("Daniella/brainstr_su/results/post-hoc/2_allbrain_alldrugs_noCtrlThck.xlsx") %>%
   mutate(drug_type_order = case_when(
     xvar %in% c("audit_c", "SSAGA_Alc_D4_Dp_Dx", "onset_alc", 
                 "Breathalyzer_Over_08") ~ 1,
@@ -1243,7 +1202,7 @@ plot11 <- read_xlsx("brainstr_su/results/post-hoc/2_allbrain_alldrugs_noCtrlThck
                             pfdr < 0.05 ~ 1, 
                             TRUE ~ 0))
 
-pvals <- c(1, 0.5, 0.05, 0.005, 0.0005, 0.00005, 0.000005)
+pvals <- c(1, 0.05, 0.0005, 0.000005)
 breaks <- -log10(pvals)
 
 get_shades <- function(vars, base_color) {
@@ -1258,27 +1217,21 @@ xvar_colors <- c(
 ) %>% unlist()
 
 p11 <- ggplot(plot11, aes(x = -log10(`Pr(>|t|)`), y = ypos_factor, fill = xvar)) +
-  geom_point(size = 2.5, shape = 21, alpha = 1, color = "black",
-             stroke = plot11$stroke) + 
-  theme_classic() +
+  geom_point(size = 1.5, shape = 21, alpha = 1, stroke = plot11$stroke) + 
+  theme_classic(base_size = 7) +
   scale_x_continuous(
     breaks = breaks,
     labels = pvals,
     expand = expansion(mult = c(0.01, 0.05)))+
-    # limits = c(0, 5.4)) +
   scale_fill_manual(values = xvar_colors) +
-  facet_wrap(~ drugtype, scales = "free_y", ncol = 1, strip.position = "left")+
+  facet_wrap(~ drugtype, scales = "free_y", space = "free_y", ncol = 1, strip.position = "left")+
   xlab(expression(italic(p)~"(uncorrected, log scale)"))+
-  force_panelsizes(rows = unit(c(3, 5, 3, 2), "lines"), TRUE)+
   theme(
-    text = element_text(family = "Arial"),
     axis.text.y = element_blank(), 
     axis.ticks.y = element_blank(),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(family = "Arial", color = "black", size = 10),
-    axis.title.x = element_text(family = "Arial", color = "black", size = 13),
+    axis.text.x = element_text(color = "black", size = 6),
     strip.placement = "outside",
-    strip.text.y = element_text(family = "Arial", color = "black", size = 10),
     strip.text.y.left = element_text(angle = 360),
     strip.background = element_rect(color = NA, fill = NA),
     panel.spacing = unit(0, "lines"),
@@ -1289,7 +1242,7 @@ p11 <- ggplot(plot11, aes(x = -log10(`Pr(>|t|)`), y = ypos_factor, fill = xvar))
 p11
 ######## all brain ~ all drugs + meanthck########################
 
-plot12 <- read_xlsx("brainstr_su/results/post-hoc/3_allbrain_alldrugs_ctrlThck.xlsx") %>%
+plot12 <- read_xlsx("Daniella/brainstr_su/results/post-hoc/3_allbrain_alldrugs_ctrlThck.xlsx") %>%
   mutate(drug_type_order = case_when(
     xvar %in% c("audit_c", "SSAGA_Alc_D4_Dp_Dx", "onset_alc", 
                 "Breathalyzer_Over_05", "Breathalyzer_Over_08") ~ 1,
@@ -1309,31 +1262,22 @@ plot12 <- read_xlsx("brainstr_su/results/post-hoc/3_allbrain_alldrugs_ctrlThck.x
                               levels = unique(paste(xvar, y.var))),
          stroke = ifelse(pfdr < 0.05, 1, 0))
 
-pvals <- c(1, 0.5, 0.05, 0.005, 0.0005, 0.00005, 0.000005)
-breaks <- -log10(pvals)
-
 p12 <- ggplot(plot12, aes(x = -log10(`Pr(>|t|)`), y = ypos_factor, fill = xvar)) +
-  geom_point(size = 2.5, shape = 21, color = "black",alpha = 1,
-             stroke = plot12$stroke) + 
-  theme_classic() +
-  
+  geom_point(size = 1.5, shape = 21, stroke = plot12$stroke) + 
+  theme_classic(base_size = 7) +
   scale_x_continuous(
     breaks = breaks,
     labels = pvals,
     expand = expansion(mult = c(0.01, 0.05))) +
   scale_fill_manual(values = xvar_colors) +
-  facet_wrap(~ drugtype, scales = "free_y", ncol = 1, strip.position = "left")+
+  facet_wrap(~ drugtype, scales = "free_y", space = "free_y", ncol = 1, strip.position = "left")+
   xlab(expression(italic(p)~"(uncorrected, log scale)"))+
-  force_panelsizes(rows = unit(c(3, 5, 3, 2), "lines"), TRUE)+
   theme(
-    text = element_text(family = "Arial"),
     axis.text.y = element_blank(), 
     axis.ticks.y = element_blank(),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(family = "Arial", color = "black", size = 10),
-    axis.title.x = element_text(family = "Arial", color = "black", size = 13),
+    axis.text.x = element_text(color = "black", size = 6),
     strip.placement = "outside",
-    strip.text.y = element_text(family = "Arial", color = "black", size = 10),
     strip.text.y.left = element_text(angle = 360),
     strip.background = element_rect(color = NA, fill = NA),
     panel.spacing = unit(0, "lines"),
@@ -1342,9 +1286,10 @@ p12 <- ggplot(plot12, aes(x = -log10(`Pr(>|t|)`), y = ypos_factor, fill = xvar))
   scale_y_discrete(expand = expansion(add = c(50, 50)))
 
 p12
+
 ############# original regions ~ all drugs ###################
 
-plot13 <- read_xlsx("brainstr_su/results/post-hoc/4_originalbrain_alldrugs_ctrlThck.xlsx") %>%
+plot13 <- read_xlsx("Daniella/brainstr_su/results/post-hoc/4_originalbrain_alldrugs_ctrlThck.xlsx") %>%
   mutate(drug_type_order = case_when(
     xvar %in% c("audit_c", "SSAGA_Alc_D4_Dp_Dx", "onset_alc", 
                 "Breathalyzer_Over_05", "Breathalyzer_Over_08") ~ 1,
@@ -1364,33 +1309,24 @@ plot13 <- read_xlsx("brainstr_su/results/post-hoc/4_originalbrain_alldrugs_ctrlT
                               levels = unique(paste(xvar, y.var))),
          stroke = ifelse(pfdr < 0.05, 1, 0))
 
-
-pvals <- c(1, 0.5, 0.05, 0.005, 0.0005, 0.00005, 0.000005)
-breaks <- -log10(pvals)
-
 p13 <- ggplot(plot13, aes(x = -log10(`Pr(>|t|)`), y = ypos_factor, fill = xvar)) +
-  geom_point(size = 2.55, shape = 21, color = "black",alpha = 1,
-             stroke = plot13$stroke) + 
-  theme_classic()+
+  geom_point(size = 1.5, shape = 21, stroke = plot13$stroke) + 
+  theme_classic(base_size = 7)+
   scale_x_continuous(
     breaks = breaks,
     labels = pvals,
     expand = expansion(mult = c(0.01, 0.05)),
-    limits = c(0, 5.4)  # Force axis to include -log10(0.00005)
+    limits = c(0, 5.4) 
   ) +
   scale_fill_manual(values = xvar_colors) +
-  facet_wrap(~ drugtype, scales = "free_y", ncol = 1, strip.position = "left")+
+  facet_wrap(~ drugtype, scales = "free_y", space = "free_y", ncol = 1, strip.position = "left")+
   xlab(expression(italic(p)~"(uncorrected, log scale)"))+
-  force_panelsizes(rows = unit(c(3, 5, 3, 2), "lines"), TRUE)+
   theme(
-    text = element_text(family = "Arial"),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(family = "Arial", color = "black", size = 10),
-    axis.title.x = element_text(family = "Arial", color = "black", size = 13),
+    axis.text.x = element_text(color = "black", size = 6),
     strip.placement = "outside",
-    strip.text.y = element_text(family = "Arial", color = "black", size = 10),
     strip.text.y.left = element_text(angle = 360),
     strip.background = element_rect(color = NA, fill = NA),
     panel.spacing = unit(0, "lines"),
@@ -1403,10 +1339,12 @@ p13
 
 p14 <- (p11 | p12 | p13)+
   plot_annotation(tag_levels = 'A')&
-  theme(plot.tag = element_text(size = 15, face = "bold"))
+  theme(plot.tag = element_text(size = 10, face = "bold"))
 p14
   
- # ggsave("p14.jpeg", p14, dpi = 500, units = "mm")
+ggsave("Daniella/images/eFigure5.png", p14, dpi = 500, units = "mm", width = 180, height = 60)
+ggsave("Daniella/images/eFigure5.pdf", p14, units = "mm", width = 180, height = 60)
+ggsave("Daniella/images/eFigure5.jpeg", p14, dpi = 500, units = "mm", width = 180, height = 60)
 
 
 
@@ -1440,43 +1378,43 @@ heavy_use <- upset(
   intersect = c("Heavy Illicit Drug Use","Heavy Tobacco Use","*Severe Alcohol Use","Heavy Marijuana Use"),
   sort_intersections_by = "degree",
   sort_intersections = "ascending",
-  stripes = "grey95",
+  stripes = upset_stripes(colors = "grey95", geom=geom_segment(size=3)),
   height_ratio = 0.35,
   themes=upset_modify_themes(
     list('intersections_matrix'=theme(
-      axis.text.y=element_text(color = "black", family = "Arial", size = 12),
-      axis.title=element_text(color = "black", family = "Arial", size = 12),
-      panel.grid = element_blank()))),
+      axis.text.y=element_text(color = "black", size = 6),
+      axis.title=element_text(color = "black", size = 7),
+      panel.grid = element_blank()),
+      'Intersection size' =theme(axis.text.y=element_text(size = 7)))),
   base_annotations = list(
     "Intersection size" = intersection_size(
       counts = TRUE,
       width = 0.9,
       bar_number_threshold = 1,
-      text = list(vjust = -0.5, size = 3.75, family = "Arial")) +
+      text = list(vjust = -0.5, size = 1.75)) +
       coord_cartesian(ylim = c(0, 800)) + 
       theme_void() +
       theme(
-        axis.title.y = element_text(vjust = -45, size = 12, family = "Arial"),
+        axis.title.y = element_text(vjust = -40, size = 7),
         axis.line = element_line(color = "white")) +
       ylab("Number of Users by Pattern")
   ),
   set_sizes = (
     upset_set_size() +
-      expand_limits(y=1300)+
+      expand_limits(y=315)+
       geom_bar (fill = "grey75", width = 0.6) +
-      geom_text(aes(label=..count..), hjust=1.2, stat='count', size = 3.5, family = "Arial") +
+      geom_text(aes(label=..count..), hjust=1.2, stat='count', size = 1.75) +
       theme(
         strip.background = element_rect(fill = "white"),
         panel.grid = element_blank(),
         axis.text = element_blank(),
-        axis.text.x = element_blank(),
-        axis.title.y = element_text(vjust = -30, size = 12, family = "Arial", color = "black"))+
+        axis.title.x = element_text(size = 7, color = "black"))+
       ylab("Number of Hazardous Users by Drug ")
   ),
   matrix = intersection_matrix(
-    geom = geom_point(shape = 19, size = 5.5),
+    geom = geom_point(shape = 19, size = 2),
     segment = geom_segment(
-      linetype = "solid", linewidth = 1),
+      linetype = "solid", linewidth = 0.75),
     outline_color = list(
       active = NA,     
       inactive = NA)
@@ -1566,12 +1504,13 @@ heavy_use <- upset(
   ######
 theme(
   plot.margin = unit(c(0, 0, 0, 0), "mm"),
-  plot.tag = element_text(size = 20, family = "Arial", face = "bold", hjust = -1, vjust = 1.5),
+  plot.tag = element_text(size = 10, face = "bold", hjust = -1, vjust = 1.5),
   plot.tag.position = c(0,1)
 )
 
 heavy_use
 
- # ggsave("heavy.jpeg", heavy_use, dpi = 500, units = "mm")
-
+ggsave("Daniella/images/eFigure2.png", heavy_use, dpi = 500, units = "mm", width = 180, height = 60)
+ggsave("Daniella/images/eFigure2.pdf", heavy_use, units = "mm", width = 180, height = 60)
+ggsave("Daniella/images/eFigure2.jpeg", heavy_use, dpi = 500, units = "mm", width = 180, height = 60)
 
