@@ -1,5 +1,5 @@
 # BrainStructureSubstanceUse
-Contains   code for the manuscript "Brain Structure and Substance Use: Disentangling Risk, Exposure, and Drug-Specific Effects", doi: xxx.
+Contains   code for the manuscript "Brain Structure and Substance Use: Disentangling Risk, Exposure, and Drug-Specific Effects", doi: [2026.03.20.26348897](https://doi.org/10.64898/2026.03.20.26348897).
 
 Uses restricted and unrestricted data of the HCP 1200 release.
 
